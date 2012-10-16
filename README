@@ -1,0 +1,4 @@
+This module wraps the HMMER CLI in python, allowing you to make scripted calls
+to HMMER.
+
+The module is currently in planning/early development.
