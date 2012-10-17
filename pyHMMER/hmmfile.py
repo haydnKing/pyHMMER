@@ -116,6 +116,8 @@ class HMM:
 		"""parse the header"""
 		self.COM = []
 		self.STATS = []
+		#assume these to be false if not present
+		self.RM = self.CS = self.MAP = False
 		r = re.compile(r'^(?P<key>\w+)\s+(?P<value>.+)$')
 		for line in lines:
 			m = r.match(line[1])
