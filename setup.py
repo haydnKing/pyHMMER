@@ -14,4 +14,5 @@ setup(
 		keywords = "wrapper HMMER HMM bioinformatics",
 		packages=['pyHMMER', 'tests'],
 		long_description=read('README'),
+		test_suite='tests',
 		)

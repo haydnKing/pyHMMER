@@ -64,10 +64,14 @@ class HMM:
 		
 		#parse the model section
 		#self._read_mdl(model)
+		
+	def printErrors(self):
 		if len(self.errors):
 			print "Error parsing file:"
 			for error in self.errors:
 				print "\t%s" % error
+
+	def printWarnings(self):
 		if len(self.warnings):
 			print "Warning:"
 			for warn in self.warnings:
