@@ -60,6 +60,9 @@ class TestHMMRead(unittest.TestCase):
 			('LOCAL', 'FORWARD', -4.4686, 0.71971,),
 			])
 
+	def test_warnings(self):
+		self.assertEqual(len(self.hmm.warnings), 2)
+
 
 
 
