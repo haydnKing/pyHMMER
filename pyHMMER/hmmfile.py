@@ -114,6 +114,56 @@ class HMM:
 	def isValid(self):
 		return (len(self.errors) == 0)
 
+	def writeToFile(self, fname):
+		f = open(fname, 'w')
+		self.write(f)
+		f.close()
+
+	def write(self, f):
+		f.writelines(self.getLines())
+
+	def getLines(self):
+		ret = [];
+		ret.append('HMMER3/b [pyHMMER | 2012]\n')
+		#write header
+		for o in ['NAME', 'ACC', 'DESC', 'LENG', 'ALPH', 'DATE', 'NSEQ', 'EFFN',
+				'CKSUM',]:
+			try:
+				ret.append('%s\t%s\n' % (o, getattr(self, o)))
+			except AttributeError:
+				pass
+		for o in ['RF', 'CS', 'MAP']:
+			try:
+				if getattr(self, o):
+					ret.append('%s\tyes\n' % o)
+				else:
+					ret.append('%s\tno\n' % o)
+			except AttributeError:
+				pass
+
+		for c in self.COM:
+			ret.append('COM\t%s %s\n' % c)
+
+		for o in ['GA', 'TC', 'NC',]:
+			try:
+				out = getattr(self, o)
+				ret.append('%s\t%f  %f\n' % (o, out[0], out[1]))
+			except AttributeError:
+				pass
+
+		for s in self.STATS:
+			ret.append('STATS\t%s %s %f %f\n' % s)
+
+		#write HMM lines
+		ret.append('HMM          ')
+		ret.append( '%10s'*len(self.SYMBOLS) % tuple(self.SYMBOLS))
+		ret.append(
+			'\n            m->m     m->i     m->d'
+			'     i->m     i->i     d->m     d->d\n')
+
+		#write model
+		return ret
+
 	def _read_hdr(self, lines):
 		"""parse the header"""
 
