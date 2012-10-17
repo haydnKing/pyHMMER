@@ -4,7 +4,7 @@ import unittest
 class TestHMMRead(unittest.TestCase):
 
 	hmm = hmmfile.HMM('tests/data/valid.hmm')
-	
+
 	def test_valid(self):
 		self.assertTrue(self.hmm.isValid())
 
@@ -98,4 +98,19 @@ class TestHMMRead(unittest.TestCase):
 	def test_no_name(self):
 		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
 				('tests/data/no_name.hmm'))
+
+	def test_state(self):
+		s = self.hmm.states[33]
+		self.assertEqual(s.num, 33)
+		self.assertEqual(s.match_emission,[3.79753,7.35139,8.03144,7.44063,
+					4.52454,7.32717,7.48394,3.90706,7.25453,3.18850,0.14720,7.47555,
+					7.49919,7.18151,7.18775,6.67656,6.28879,4.64358,4.98721,4.09848,])
+		self.assertEqual(s.MAP_annot, 33)
+		self.assertEqual(s.RF_annot, '-')
+		self.assertEqual(s.CS_annot, '-')
+		self.assertEqual(s.insert_emission,[2.68618,4.42225,2.77519,2.73123,
+			3.46354,2.40513,3.72494,3.29354,2.67741,2.69355,4.24690,2.90347,
+			2.73739,3.18146,2.89801,2.37887,2.77519,2.98518,4.58477,3.61503,])
+		self.assertEqual(s.transition, 
+			[0.00075,7.59383,8.31617,0.61958,0.77255,0.48576,0.95510,])
 
