@@ -63,12 +63,35 @@ class TestHMMRead(unittest.TestCase):
 	def test_warnings(self):
 		self.assertEqual(len(self.hmm.warnings), 2)
 
+	def test_invalid_line(self):
+		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+				('tests/data/invalid_line.hmm'))
+	
+	def test_invalid_leng(self):
+		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+				('tests/data/invalid_leng.hmm'))
 
+	def test_invalid_stats(self):
+		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+				('tests/data/invalid_stats.hmm'))
+	
+	def test_invalid_stat_type(self):
+		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+				('tests/data/invalid_stat_type.hmm'))
+	
+	def test_no_head(self):
+		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+				('tests/data/no_head.hmm'))
+	
+	def test_no_hmm(self):
+		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+				('tests/data/no_hmm.hmm'))
+						
+	def test_no_leng(self):
+		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+				('tests/data/no_leng.hmm'))
+	
+	def test_no_name(self):
+		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+				('tests/data/no_name.hmm'))
 
-
-
-
-
-
-
-		
