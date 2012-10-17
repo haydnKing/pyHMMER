@@ -75,6 +75,10 @@ class TestHMMRead(unittest.TestCase):
 		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
 				('tests/data/invalid_stats.hmm'))
 	
+	def test_invalid_alph(self):
+		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+				('tests/data/invalid_alph.hmm'))
+
 	def test_invalid_stat_type(self):
 		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
 				('tests/data/invalid_stat_type.hmm'))

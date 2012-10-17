@@ -51,6 +51,12 @@ REQUIRED = [
 						'ALPH',
 						]
 
+ALPHABETS = {
+		'DNA': 'ACGT',
+		'RNA': 'ACGU',
+		'AMINO': 'ACDEFGHIKLMNPQRSTVWY',
+		}
+
 class HMM:
 	"""A Hidden Markov Model"""
 	def __init__(self, fname):
@@ -125,6 +131,12 @@ class HMM:
 			#simple strings
 			if key in ['NAME', 'ACC', 'DESC', 'ALPH', 'DATE',]:
 				setattr(self, key, val)
+				if key == 'ALPH':
+					if self.ALPH.upper() in ALPHABETS:
+						self.SYMBOLS = ALPHABETS[self.ALPH.upper()]
+						self.K = len(self.SYMBOLS)
+					else:
+						self._addError(line[0], 'ALPH must be \'DNA\', \'RNA\' or \'AMINO\'')
 			#integers
 			elif key in ['LENG', 'NSEQ', 'CKSUM',]:
 				try:
@@ -210,6 +222,8 @@ class HMM:
 				getattr(self, o)
 			except AttributeError:
 				self._addError(-1, 'Option \'%s\' is required')
+
+
 									
 	def _addError(self, line, what):
 		self.errors.append((line, what))
