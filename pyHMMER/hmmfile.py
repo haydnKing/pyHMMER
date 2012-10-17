@@ -56,30 +56,41 @@ class HMM:
 		if not found:
 			raise HMMFileException('Invalid File: no \'HMM\' line found')
 		
+		self.errors = []
+		self.warnings = []
+
 		#parse the header section
-		e = self._read_hdr(header)
-		if len(e):
-			print "Error parsing file:"
-			for error in e:
-				print "\t%s" % error
+		self._read_hdr(header)
+		
 		#parse the model section
 		#self._read_mdl(model)
+		if len(self.errors):
+			print "Error parsing file:"
+			for error in self.errors:
+				print "\t%s" % error
+		if len(self.warnings):
+			print "Warning:"
+			for warn in self.warnings:
+				print "\t%s" % warn
+
+	def isValid(self):
+		return (len(self.errors) == 0)
 
 	def _read_hdr(self, lines):
 		"""parse the header"""
-		errors = []
 		self.COM = []
 		self.STATS = []
-		r = re.compile(r'^(?P<key>\S+)\s+(?P<value>.+)$')
+		r = re.compile(r'^(?P<key>\w+)\s+(?P<value>.+)$')
 		for line in lines:
 			m = r.match(line[1])
 			if not m:
-				errors.append('Line %s: invalid line'% line[0] + 1)
+				self.errors.append('Line %s: invalid line'% line[0] + 1)
 				continue
 			key = m.group('key').upper()
 			val = m.group('value')
 			if not (key in OPTIONS):
-				errors.append('Line %s: unknown option \'%s\'' % (line[0] + 1,	key))
+				self.warnings.append('Line %s: ignoring unknown option \'%s\'' % 
+						(line[0] + 1,	key))
 				continue
 
 			#simple strings
@@ -93,7 +104,7 @@ class HMM:
 						raise ValueError
 					setattr(self, key, val)
 				except ValueError:
-					errors.append('Line %s: Must be a positive integer')
+					self.errors.append('Line %s: Must be a positive integer')
 					continue
 			#bools
 			elif key in ['RF', 'CS', 'MAP',]:
@@ -102,7 +113,7 @@ class HMM:
 				if val in b:
 					setattr(self, key, b[val])
 				else:
-					errors.append('Line %s: value must be \'yes\' or \'no\'' % line[0]+1)
+					self.errors.append('Line %s: value must be \'yes\' or \'no\'' % line[0]+1)
 					continue
 			#COM
 			elif key == 'COM':
@@ -111,7 +122,7 @@ class HMM:
 					try:
 						self.COM.append( (int(m2.group(1)), m2.group(2)))
 					except ValueError:
-						errors.append('Line %s: Invalid command number'% line[0]+1)
+						self.errors.append('Line %s: Invalid command number'% line[0]+1)
 						continue
 				else:
 					self.COM.append( (len(self.COM)+1, value))
@@ -122,7 +133,7 @@ class HMM:
 						raise ValueError
 					self.EFFN = val
 				except ValueError:
-					errors.append('Line %s: EFFN must be a positive real'% line[0]+1)
+					self.errors.append('Line %s: EFFN must be a positive real'% line[0]+1)
 					continue
 			#pairs of floats
 			elif key in ['GA', 'TC', 'NC']:
@@ -135,11 +146,11 @@ class HMM:
 							raise ValueError
 						setattr(self, key, (v1, v2))
 					except ValueError:
-						errors.append('Line %s: %s must be two positive reals' % 
+						self.errors.append('Line %s: %s must be two positive reals' % 
 								(line[0]+1, key))
 						continue
 				else:
-					errors.append('Line %s: %s must be two positive reals' % 
+					self.errors.append('Line %s: %s must be two positive reals' % 
 								(line[0]+1, key))
 			#STATS
 			elif key == 'STATS':
@@ -153,10 +164,10 @@ class HMM:
 						if s1 == 'LOCAL' and s2 in ['MSV', 'VITERBI', 'FORWARD']:
 							self.STATS.append((s1, s2, f1, f2))
 					except ValueError:
-						errors.append('Line %s: STATS <s1> <s2> <f1> <f2>' % line[0]+1)
+						self.errors.append('Line %s: STATS <s1> <s2> <f1> <f2>' % line[0]+1)
 						continue
 				else:
-					errors.append('Line %s: STATS <s1> <s2> <f1> <f2>' % line[0]+1)
+					self.errors.append('Line %s: STATS <s1> <s2> <f1> <f2>' % line[0]+1)
 					continue
 		
 		#Parsed each line
@@ -165,9 +176,7 @@ class HMM:
 			try:
 				getattr(self, o)
 			except AttributeError:
-				errors.append('Option \'%s\' is required')
-
-		return errors
+				self.errors.append('Option \'%s\' is required')
 									
 
 
