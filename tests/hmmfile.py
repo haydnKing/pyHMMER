@@ -3,7 +3,8 @@ import unittest
 
 class TestHMMRead(unittest.TestCase):
 
-	hmm = hmmfile.HMM('tests/data/valid.hmm')
+	hmm = hmmfile.HMM()
+	hmm.loadFile('tests/data/valid.hmm')
 
 	def test_valid(self):
 		self.assertTrue(self.hmm.isValid())
@@ -114,3 +115,44 @@ class TestHMMRead(unittest.TestCase):
 		self.assertEqual(s.transition, 
 			[0.00075,7.59383,8.31617,0.61958,0.77255,0.48576,0.95510,])
 
+import tempfile
+
+def save_load(hmm):
+	f = tempfile.TemporaryFile('w+r')
+	hmm.write(f)
+	f.seek(0)
+	test = hmmfile.HMM()
+	test.load(f)
+	f.close()
+	return test
+
+
+class TestHMMReadWrite(unittest.TestCase):
+
+	hmm = hmmfile.HMM()
+	hmm.loadFile('tests/data/valid.hmm')
+
+
+
+	def test_options(self):
+		hmm = save_load(self.hmm)
+		for o in hmmfile.OPTIONS:
+			if hasattr(self.hmm, o):
+				self.assertEqual(getattr(self.hmm, o), getattr(hmm, o))
+
+	def test_model(self):
+		hmm = save_load(self.hmm)
+		if hasattr(self.hmm, 'COMPO'):
+			self.assertEqual(self.hmm.COMPO, hmm.COMPO)
+
+		for i,s in enumerate(self.hmm.states):
+			s2 = hmm.states[i]
+			self.assertEqual(s.match_emission, s2.match_emission)
+			self.assertEqual(s.insert_emission, s2.insert_emission)
+			self.assertEqual(s.transition, s2.transition)
+			self.assertEqual(s.MAP_annot, s2.MAP_annot)
+			self.assertEqual(s.RF_annot, s2.RF_annot)
+			self.assertEqual(s.CS_annot, s2.CS_annot)
+
+
+		

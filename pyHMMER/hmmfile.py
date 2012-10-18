@@ -81,7 +81,7 @@ class State:
 class HMM:
 	"""A Hidden Markov Model"""
 
-	def __init__(self, fname):
+	def __init__(self, fname=''):
 		self.errors = []
 		self.warnings = []
 		self.line = -1
@@ -93,10 +93,19 @@ class HMM:
 		self.RM = self.CS = self.MAP = False
 		self.K = 0
 
+		if fname:
+			self.loadFile(fname)
+	
+	def loadFile(self, fname):
+		"""load a file from disk"""
 		#open the file and read the file
 		f = open(fname, 'r')
-		lines = [line.strip() for line in f]
+		self.load(f)
 		f.close()
+
+	def load(self, f):
+		"""load from a file object"""
+		lines = [line.strip() for line in f]
 
 		#Should I try to read the model
 		self._continue = True			
@@ -129,39 +138,71 @@ class HMM:
 		for o in ['NAME', 'ACC', 'DESC', 'LENG', 'ALPH', 'DATE', 'NSEQ', 'EFFN',
 				'CKSUM',]:
 			try:
-				ret.append('%s\t%s\n' % (o, getattr(self, o)))
+				ret.append('{:<5s} {}\n'.format(o, getattr(self, o)))
 			except AttributeError:
 				pass
 		for o in ['RF', 'CS', 'MAP']:
 			try:
 				if getattr(self, o):
-					ret.append('%s\tyes\n' % o)
+					ret.append('{:<5s} yes\n'.format(o))
 				else:
-					ret.append('%s\tno\n' % o)
+					ret.append('{:<5s} no\n'.format(o))
 			except AttributeError:
 				pass
 
 		for c in self.COM:
-			ret.append('COM\t%s %s\n' % c)
+			ret.append('COM   %s %s\n' % c)
 
 		for o in ['GA', 'TC', 'NC',]:
 			try:
 				out = getattr(self, o)
-				ret.append('%s\t%f  %f\n' % (o, out[0], out[1]))
+				ret.append('{:<5s} {:.2f}  {:.2f}\n'.format(o, out[0], out[1]))
 			except AttributeError:
 				pass
 
 		for s in self.STATS:
-			ret.append('STATS\t%s %s %f %f\n' % s)
+			ret.append('STATS {:<5s} {:<10s} {:8f} {:8f}\n'.format(*s))
 
 		#write HMM lines
-		ret.append('HMM          ')
-		ret.append( '%10s'*len(self.SYMBOLS) % tuple(self.SYMBOLS))
+		ret.append('HMM ')
+		ret.append( '%9s'*len(self.SYMBOLS) % tuple(self.SYMBOLS))
 		ret.append(
 			'\n            m->m     m->i     m->d'
 			'     i->m     i->i     d->m     d->d\n')
 
+		def ff(f, l=9, p=5):
+			try:
+				return ('%'+str(l)+'.'+str(p)+'f') % f
+			except TypeError:
+				return ' '*(l-1) + '*'
+		#write CMPO, if it exists. Should probably calculate it...
+		try:
+			ret.append(("%7s" + ("%9s" * self.K) + "\n") % 
+					(('COMPO',) + tuple((ff(f) for f in self.COMPO))))
+		except AttributeError:
+			pass
+
 		#write model
+		me_fmt = "%7i" + ("%9s" * self.K) + "%7i %1s %1s\n"
+		ie_fmt = (" " * 7) + ("%9s" * self.K) + "\n"
+		tr_fmt = (" " * 7) + ("%9s" * 7) + "\n"
+
+		#0th state gets special treatment
+		if len(self.states) < 1:
+			return ret
+
+		ret.append(ie_fmt % tuple((ff(f) for f in self.states[0].insert_emission)))
+		ret.append(tr_fmt % tuple((ff(f) for f in self.states[0].transition)))
+
+		#write model
+		for i,s in enumerate(self.states[1:], 1):
+			ret.append(me_fmt % ((i,) + tuple((ff(f) for f in s.match_emission)) + 
+					(s.MAP_annot, s.RF_annot, s.CS_annot)))
+			ret.append(ie_fmt % tuple((ff(f) for f in s.insert_emission)))
+			ret.append(tr_fmt % tuple((ff(f) for f in s.transition)))
+
+		#end with //
+		ret.append('      //\n')
 		return ret
 
 	def _read_hdr(self, lines):
