@@ -130,32 +130,32 @@ class HMMParser:
 					state = self.S_header
 					continue
 
-				#have we found the end of the HMM
-				if re.match(r'^//', line):
-					#if this isn't where it's supposed to be
-					if state != self.S_model_me:
-						#provide a helpful error
-						ltype = 'None'
-						if state == self.S_header:
-							ltype = 'header'
-						elif state == self.S_model_ie:
-							ltype = 'insert emission'
-						elif state == self.S_model_st:
-							ltype = 'state transition'
-						self._addError('Unexpected \'//\', expecting {} line'.format(ltype))
+			#have we found the end of the HMM
+			if re.match(r'^//', line):
+				#if this isn't where it's supposed to be
+				if state != self.S_model_me:
+					#provide a helpful error
+					ltype = 'None'
+					if state == self.S_header:
+						ltype = 'header'
+					elif state == self.S_model_ie:
+						ltype = 'insert emission'
+					elif state == self.S_model_st:
+						ltype = 'state transition'
+					self._addError('Unexpected \'//\', expecting {} line'.format(ltype))
 
-					#check if we've found the advertised number of states 
-					#			nb. hmm.LENG doesn't include the begin state """
-					if len(hmm.states)-1 < hmm.LENG:
-						self._addError('Too few states in model ({:d} < {:d})'
-								.format(len(hmm.states-1), hmm.LENG))
-					if len(hmm.states)-1 > hmm.LENG:
-						self._addError('Too many states in model ({:d} > {:d})'
-								.format(len(hmm.states-1), hmm.LENG))
-					#add the HMM to the list
-					ret.append(hmm)
-					state = self.S_default
-					continue
+				#check if we've found the advertised number of states 
+				#			nb. hmm.LENG doesn't include the begin state """
+				if len(hmm.states)-1 < hmm.LENG:
+					self._addError('Too few states in model ({:d} < {:d})'
+							.format(len(hmm.states)-1, hmm.LENG))
+				if len(hmm.states)-1 > hmm.LENG:
+					self._addError('Too many states in model ({:d} > {:d})'
+							.format(len(hmm.states)-1, hmm.LENG))
+				#add the HMM to the list
+				ret.append(hmm)
+				state = self.S_default
+				continue
 
 			#parse a header line
 			if state == self.S_header:
@@ -183,8 +183,8 @@ class HMMParser:
 						#otherwise drop only one line
 						consume(iterator, 1)
 					
-					hmm.states = [State(),]
-					state = self.S_model_me
+					model_state = State()
+					state = self.S_model_ie
 					continue
 				
 				m = self.hdr_re.match(line)
@@ -296,8 +296,8 @@ class HMMParser:
 
 				try:
 					num = int(l[0])
-					if num != len(self.states):
-						self._addError('Expected state number %s' % len(self.states))
+					if num != len(hmm.states):
+						self._addError('Expected state number %s' % len(hmm.states))
 				except ValueError:
 					self._addError('Node number must be a positive integer')
 
@@ -316,28 +316,33 @@ class HMMParser:
 				#RF annotation
 				try:
 					model_state.RF = l[hmm.K+2]
-					if len(RF) != 1:
+					if len(model_state.RF) != 1:
 						self._addError('RF annotation must be a single character')
 				except IndexError:
 					self._addError('No RF annotation provided')
 				#CS annotation
 				try:
 					model_state.CS = l[hmm.K+3]
-					if len(CS_annot) != 1:
+					if len(model_state.CS) != 1:
 						self._addError('CS annotation must be a single character')
 				except IndexError:
 					self._addError('No CS annotation provided')
 				#we're now expecting an IE line
 				state = self.S_model_ie
+				continue
 
 			if state == self.S_model_ie:
 				model_state.ie = self._parse_prob(line.split(), hmm.K)
 				state = self.S_model_st
+				continue
 
-			elif state == self.S_model_st:
+			if state == self.S_model_st:
 				model_state.tr = self._parse_prob(line.split(), 7)
 				#add the state to the current hmm
 				hmm.states.append(model_state)
+				model_state = State()
+				state = self.S_model_me
+				continue
 
 		#parsed every line in the file
 		#if there were errors, raise them. Otherwise keep quiet
