@@ -387,15 +387,87 @@ class HMMParser:
 		return ret
 
 
+def write(hmms, f):
+	"""Write out the HMMs in hmms to f, either a fileObject or a string"""	
+	if isinstance(f, basestring):
+		f = open(f, 'w')
 
+	if not isinstance(hmms, collections.Iterable):
+		hmms = [hmms,]
 
+	for hmm in hmms:
+		f.write('HMMER3/b [pyHMMER | 2012]\n')
+		#write header
+		for o in ['NAME', 'ACC', 'DESC', 'LENG', 'ALPH', 'DATE', 'NSEQ', 'EFFN',
+				'CKSUM',]:
+			try:
+				f.write('{:<5s} {}\n'.format(o, getattr(hmm, o)))
+			except AttributeError:
+				pass
+		for o in ['RF', 'CS', 'MAP']:
+			try:
+				if getattr(hmm, o):
+					f.write('{:<5s} yes\n'.format(o))
+				else:
+					f.write('{:<5s} no\n'.format(o))
+			except AttributeError:
+				pass
 
+		for c in hmm.COM:
+			f.write('COM   %s %s\n' % c)
 
+		for o in ['GA', 'TC', 'NC',]:
+			try:
+				out = getattr(hmm, o)
+				f.write('{:<5s} {:.2f}  {:.2f}\n'.format(o, out[0], out[1]))
+			except AttributeError:
+				pass
 
+		for s in hmm.STATS:
+			f.write('STATS {:<5s} {:<10s} {:8f} {:8f}\n'.format(*s))
 
+		#write HMM lines
+		f.write('HMM ')
+		f.write( '%9s'*len(hmm.SYMBOLS) % tuple(hmm.SYMBOLS))
+		f.write(
+			'\n            m->m     m->i     m->d'
+			'     i->m     i->i     d->m     d->d\n')
 
+		def ff(f, l=9, p=5):
+			try:
+				return ('%'+str(l)+'.'+str(p)+'f') % f
+			except TypeError:
+				return ' '*(l-1) + '*'
+		#write CMPO, if it exists. Should probably calculate it...
+		try:
+			f.write(("%7s" + ("%9s" * hmm.K) + "\n") % 
+					(('COMPO',) + tuple((ff(f) for f in hmm.COMPO))))
+		except AttributeError:
+			pass
 
+		#write model
+		me_fmt = "%7i" + ("%9s" * hmm.K) + "%7i %1s %1s\n"
+		ie_fmt = (" " * 7) + ("%9s" * hmm.K) + "\n"
+		tr_fmt = (" " * 7) + ("%9s" * 7) + "\n"
 
+		#0th state gets special treatment
+		if len(hmm.states) < 1:
+			f.write('      //\n')
+			continue
+
+		f.write(ie_fmt % tuple((ff(f) for f in hmm.states[0].ie)))
+		f.write(tr_fmt % tuple((ff(f) for f in hmm.states[0].tr)))
+
+		#write model
+		for i,s in enumerate(hmm.states[1:], 1):
+			f.write(me_fmt % ((i,) + tuple((ff(f) for f in s.me)) + 
+				(s.MAP, s.RF, s.CS)))
+			f.write(ie_fmt % tuple((ff(f) for f in s.ie)))
+			f.write(tr_fmt % tuple((ff(f) for f in s.tr)))
+
+		#end with //
+		f.write('      //\n')
+		
 
 
 
@@ -413,7 +485,6 @@ class State:
 
 class HMM:
 	"""A Hidden Markov Model"""
-
 	def __init__(self):
 		self.NAME = ''
 		self.LENG = 0
@@ -425,86 +496,4 @@ class HMM:
 		self.RM = self.CS = self.MAP = False
 		self.K = 0
 		
-	def writeToFile(self, fname):
-		f = open(fname, 'w')
-		self.write(f)
-		f.close()
-
-	def write(self, f):
-		f.writelines(self.getLines())
-
-	def getLines(self):
-		ret = [];
-		ret.append('HMMER3/b [pyHMMER | 2012]\n')
-		#write header
-		for o in ['NAME', 'ACC', 'DESC', 'LENG', 'ALPH', 'DATE', 'NSEQ', 'EFFN',
-				'CKSUM',]:
-			try:
-				ret.append('{:<5s} {}\n'.format(o, getattr(self, o)))
-			except AttributeError:
-				pass
-		for o in ['RF', 'CS', 'MAP']:
-			try:
-				if getattr(self, o):
-					ret.append('{:<5s} yes\n'.format(o))
-				else:
-					ret.append('{:<5s} no\n'.format(o))
-			except AttributeError:
-				pass
-
-		for c in self.COM:
-			ret.append('COM   %s %s\n' % c)
-
-		for o in ['GA', 'TC', 'NC',]:
-			try:
-				out = getattr(self, o)
-				ret.append('{:<5s} {:.2f}  {:.2f}\n'.format(o, out[0], out[1]))
-			except AttributeError:
-				pass
-
-		for s in self.STATS:
-			ret.append('STATS {:<5s} {:<10s} {:8f} {:8f}\n'.format(*s))
-
-		#write HMM lines
-		ret.append('HMM ')
-		ret.append( '%9s'*len(self.SYMBOLS) % tuple(self.SYMBOLS))
-		ret.append(
-			'\n            m->m     m->i     m->d'
-			'     i->m     i->i     d->m     d->d\n')
-
-		def ff(f, l=9, p=5):
-			try:
-				return ('%'+str(l)+'.'+str(p)+'f') % f
-			except TypeError:
-				return ' '*(l-1) + '*'
-		#write CMPO, if it exists. Should probably calculate it...
-		try:
-			ret.append(("%7s" + ("%9s" * self.K) + "\n") % 
-					(('COMPO',) + tuple((ff(f) for f in self.COMPO))))
-		except AttributeError:
-			pass
-
-		#write model
-		me_fmt = "%7i" + ("%9s" * self.K) + "%7i %1s %1s\n"
-		ie_fmt = (" " * 7) + ("%9s" * self.K) + "\n"
-		tr_fmt = (" " * 7) + ("%9s" * 7) + "\n"
-
-		#0th state gets special treatment
-		if len(self.states) < 1:
-			return ret
-
-		ret.append(ie_fmt % tuple((ff(f) for f in self.states[0].insert_emission)))
-		ret.append(tr_fmt % tuple((ff(f) for f in self.states[0].transition)))
-
-		#write model
-		for i,s in enumerate(self.states[1:], 1):
-			ret.append(me_fmt % ((i,) + tuple((ff(f) for f in s.match_emission)) + 
-					(s.MAP_annot, s.RF_annot, s.CS_annot)))
-			ret.append(ie_fmt % tuple((ff(f) for f in s.insert_emission)))
-			ret.append(tr_fmt % tuple((ff(f) for f in s.transition)))
-
-		#end with //
-		ret.append('      //\n')
-		return ret
-
 

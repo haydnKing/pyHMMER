@@ -118,12 +118,12 @@ import tempfile
 
 def save_load(hmm):
 	f = tempfile.TemporaryFile('w+r')
-	hmm.write(f)
+	hmmfile.write(hmm, f)
 	f.seek(0)
 	parser = hmmfile.HMMParser()
-	hmmout = parser.read(f)
+	hmmout = parser.read(f)[0]
 	f.close()
-	return test
+	return hmmout
 
 
 class TestHMMReadWrite(unittest.TestCase):
@@ -144,12 +144,12 @@ class TestHMMReadWrite(unittest.TestCase):
 
 		for i,s in enumerate(self.hmm.states):
 			s2 = hmm.states[i]
-			self.assertEqual(s.match_emission, s2.match_emission)
-			self.assertEqual(s.insert_emission, s2.insert_emission)
-			self.assertEqual(s.transition, s2.transition)
-			self.assertEqual(s.MAP_annot, s2.MAP_annot)
-			self.assertEqual(s.RF_annot, s2.RF_annot)
-			self.assertEqual(s.CS_annot, s2.CS_annot)
+			self.assertEqual(s.me, s2.me)
+			self.assertEqual(s.ie, s2.ie)
+			self.assertEqual(s.tr, s2.tr)
+			self.assertEqual(s.MAP, s2.MAP)
+			self.assertEqual(s.RF, s2.RF)
+			self.assertEqual(s.CS, s2.CS)
 
 
 		
