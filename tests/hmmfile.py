@@ -3,11 +3,8 @@ import unittest
 
 class TestHMMRead(unittest.TestCase):
 
-	hmm = hmmfile.HMM()
-	hmm.loadFile('tests/data/valid.hmm')
-
-	def test_valid(self):
-		self.assertTrue(self.hmm.isValid())
+	parser = hmmfile.HMMParser()
+	hmm = parser.read('tests/data/valid.hmm')[0]
 
 	def test_name(self):
 		self.assertEqual(self.hmm.NAME, 'PPR_1')
@@ -62,57 +59,59 @@ class TestHMMRead(unittest.TestCase):
 			])
 
 	def test_warnings(self):
-		self.assertEqual(len(self.hmm.warnings), 2)
+		parser = hmmfile.HMMParser()
+		hmm = parser.read('tests/data/valid.hmm')
+		self.assertEqual(len(parser.warnings), 2)
 
 	def test_invalid_line(self):
-		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+		self.assertRaises(hmmfile.HMMFileException, self.parser.read, 
 				('tests/data/invalid_line.hmm'))
 	
 	def test_invalid_leng(self):
-		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+		self.assertRaises(hmmfile.HMMFileException, self.parser.read, 
 				('tests/data/invalid_leng.hmm'))
 
 	def test_invalid_stats(self):
-		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+		self.assertRaises(hmmfile.HMMFileException, self.parser.read, 
 				('tests/data/invalid_stats.hmm'))
 	
 	def test_invalid_alph(self):
-		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+		self.assertRaises(hmmfile.HMMFileException, self.parser.read, 
 				('tests/data/invalid_alph.hmm'))
 
 	def test_invalid_stat_type(self):
-		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+		self.assertRaises(hmmfile.HMMFileException, self.parser.read, 
 				('tests/data/invalid_stat_type.hmm'))
 	
 	def test_no_head(self):
-		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+		self.assertRaises(hmmfile.HMMFileException, self.parser.read, 
 				('tests/data/no_head.hmm'))
 	
 	def test_no_hmm(self):
-		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+		self.assertRaises(hmmfile.HMMFileException, self.parser.read, 
 				('tests/data/no_hmm.hmm'))
 						
 	def test_no_leng(self):
-		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+		self.assertRaises(hmmfile.HMMFileException, self.parser.read, 
 				('tests/data/no_leng.hmm'))
 	
 	def test_no_name(self):
-		self.assertRaises(hmmfile.HMMFileException, hmmfile.HMM, 
+		self.assertRaises(hmmfile.HMMFileException, self.parser.read, 
 				('tests/data/no_name.hmm'))
 
 	def test_state(self):
 		s = self.hmm.states[33]
 		self.assertEqual(s.num, 33)
-		self.assertEqual(s.match_emission,[3.79753,7.35139,8.03144,7.44063,
+		self.assertEqual(s.me,[3.79753,7.35139,8.03144,7.44063,
 					4.52454,7.32717,7.48394,3.90706,7.25453,3.18850,0.14720,7.47555,
 					7.49919,7.18151,7.18775,6.67656,6.28879,4.64358,4.98721,4.09848,])
-		self.assertEqual(s.MAP_annot, 33)
-		self.assertEqual(s.RF_annot, '-')
-		self.assertEqual(s.CS_annot, '-')
-		self.assertEqual(s.insert_emission,[2.68618,4.42225,2.77519,2.73123,
+		self.assertEqual(s.MAP, 33)
+		self.assertEqual(s.RF, '-')
+		self.assertEqual(s.CS, '-')
+		self.assertEqual(s.ie,[2.68618,4.42225,2.77519,2.73123,
 			3.46354,2.40513,3.72494,3.29354,2.67741,2.69355,4.24690,2.90347,
 			2.73739,3.18146,2.89801,2.37887,2.77519,2.98518,4.58477,3.61503,])
-		self.assertEqual(s.transition, 
+		self.assertEqual(s.tr, 
 			[0.00075,7.59383,8.31617,0.61958,0.77255,0.48576,0.95510,])
 
 import tempfile
@@ -121,18 +120,16 @@ def save_load(hmm):
 	f = tempfile.TemporaryFile('w+r')
 	hmm.write(f)
 	f.seek(0)
-	test = hmmfile.HMM()
-	test.load(f)
+	parser = hmmfile.HMMParser()
+	hmmout = parser.read(f)
 	f.close()
 	return test
 
 
 class TestHMMReadWrite(unittest.TestCase):
 
-	hmm = hmmfile.HMM()
-	hmm.loadFile('tests/data/valid.hmm')
-
-
+	parser = hmmfile.HMMParser()
+	hmm = parser.read('tests/data/valid.hmm')[0]
 
 	def test_options(self):
 		hmm = save_load(self.hmm)

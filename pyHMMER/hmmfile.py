@@ -295,8 +295,8 @@ class HMMParser:
 				model_state = State()
 
 				try:
-					num = int(l[0])
-					if num != len(hmm.states):
+					model_state.num = int(l[0])
+					if model_state.num != len(hmm.states):
 						self._addError('Expected state number %s' % len(hmm.states))
 				except ValueError:
 					self._addError('Node number must be a positive integer')
