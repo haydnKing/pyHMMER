@@ -386,6 +386,10 @@ class HMMParser:
 			self._addError('expected %s floats' % expected)
 		return ret
 
+def read(f):
+	"""Read in all the HMMs in f"""
+	p = HMMParser()
+	return p.read(f)
 
 def write(hmms, f):
 	"""Write out the HMMs in hmms to f, either a fileObject or a string"""	
