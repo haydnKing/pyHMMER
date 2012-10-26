@@ -2,6 +2,8 @@
 
 #include "Python.h"
 
+#include <stdio.h>
+
 
 //Translation Table
 const char DNA2AMINO[] = {
@@ -86,44 +88,46 @@ const char DNA2AMINO[] = {
     'G',   //GGG
 };
 
-inline bool baseAsInt(const char* base, unsigned int* out)
+inline int baseAsInt(const char* base, unsigned int* out)
 {
-    if(&a == 't' || &a == 'T')
+    if(*base == 't' || *base == 'T')
     {
-        out = 0;
-        return true;
+        *out = 0;
+        return 1;
     }
-    else if(&a == 'c' || &a == 'C')
+    else if(*base == 'c' || *base == 'C')
     {
-        o = 1;
-        return true;
+        *out = 1;
+        return 1;
     }
-    else if(&a == 'a' || &a == 'A')
+    else if(*base == 'a' || *base == 'A')
     {
-        o = 2;
-        return true;
+        *out = 2;
+        return 1;
     }
-    else if(&a == 'g' || &a == 'G')
+    else if(*base == 'g' || *base == 'G')
     {
-        o = 3;
-        return true;
+        *out = 3;
+        return 1;
     }
     
-    return false;
+    return 0;
 }
 
 void clear(char** oseq)
 {
-    for( unsigned int i = 0; i < 6; i++)
+    unsigned int i;
+    for(i = 0; i < 6; i++)
         free(oseq[i]);
 
-    free(oseq)
+    free(oseq);
 }
 
 void reverse(char* c, unsigned int len)
 {
     char tmp;
-    for(unsigned int i = 0; i < len/2; i++)
+    unsigned int i;
+    for(i = 0; i < len/2; i++)
     {
         tmp = c[i];
         c[i] = c[len-i-1];
@@ -134,21 +138,22 @@ void reverse(char* c, unsigned int len)
 inline void 
 translate_codon(unsigned int a, unsigned int  b, unsigned int c, char* out)
 {
-    &out = DNA2AMINO[16*a + 4 * b + c];
+    *out = DNA2AMINO[16*a + 4 * b + c];
 }
 
 void unknown_base(char base, unsigned int position)
 {
     char* err = malloc(256);
-    sprintf(err, "unknown base \'%s\' at position %d", base, position);
+    sprintf(err, "unknown base \'%c\' at position %d", base, position);
     PyErr_SetString(PyExc_ValueError, err);
 }
 
 static PyObject *
 sixFrameTranslation(PyObject *self, PyObject *args)
 {
-    const char * iseq;
-    unsigned int ilen;
+    printf("sixFrameTranslation");
+    const char * iseq = NULL;
+    unsigned int ilen = 0;
 
     if(!PyArg_ParseTuple(args, "s#:sixFrameTranslation", iseq, ilen))
     {
@@ -157,37 +162,39 @@ sixFrameTranslation(PyObject *self, PyObject *args)
 
     if(ilen < 3)
     {
-
+        PyErr_SetString(PyExc_ValueError, "sequence too short");
         return NULL;
     }
 
     unsigned int olen = ilen / 3;
     ilen = 3 * olen;
+    unsigned int i;
 
-    char ** oseq = malloc(6 * size(char*));
+    char ** oseq = malloc(6 * sizeof(char*));
 
-    for(int i = 0; i < 6; i++)
-        oseq[i] = malloc(olen * size(char));
+    for(i = 0; i < 6; i++)
+        oseq[i] = malloc(olen * sizeof(char));
 
     //perform the translations
     unsigned int f = 0;
     unsigned int a = 0, b = 0, c = 0;
-    if(!baseAsInt(iseq, a))
+    if(!baseAsInt(iseq, &a))
     {
-        unknown_base(a[0], 0);
+        unknown_base(iseq[0], 0);
         clear(oseq);
         return NULL;
     }
-    if(!baseAsInt(iseq+1, b))
+    if(!baseAsInt(iseq+1, &b))
     {
-        unknown_base(a[1], 1);
+        unknown_base(iseq[1], 1);
         clear(oseq);
         return NULL;
     }
 
-    for(unsigned int i = 0; i < ilen-3; i++)
+    for(i = 0; i < ilen-3; i++)
     {
-        if(!baseAsInt(iseq + i + 2, c))
+        printf("i = %d", i);
+        if(!baseAsInt(iseq + i + 2, &c))
         {
             unknown_base(iseq[i+2], i+2);
             clear(oseq);
@@ -207,7 +214,7 @@ sixFrameTranslation(PyObject *self, PyObject *args)
     reverse(oseq[4], olen);
     reverse(oseq[5], olen);
 
-    return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], oseq[3]
+    return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], oseq[3],
                                     oseq[4], oseq[5], oseq[6]);
 }
 

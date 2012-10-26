@@ -1,8 +1,12 @@
 import os
-from setuptools import setup
+from setuptools import setup, Extension
 
 def read(fname):
 	return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+
+module1 = Extension('pyHMMER.seqConvert',
+										sources = ['pyHMMER/seqConvert.c'])
 
 setup(
 		name = "pyHMMER",
@@ -15,4 +19,5 @@ setup(
 		packages=['pyHMMER', 'tests'],
 		long_description=read('README'),
 		test_suite='tests',
+		ext_modules=[module1,],
 		)
