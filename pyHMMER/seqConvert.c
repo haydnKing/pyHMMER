@@ -88,27 +88,44 @@ const char DNA2AMINO[] = {
     'G',   //GGG
 };
 
-inline int baseAsInt(const char* base, unsigned int* out)
+const char GENERIC[] = "mrwsykvhdbnx";
+
+inline int baseAsInt(char base, unsigned int* out)
 {
-    if(*base == 't' || *base == 'T')
+    if(base >= 'A')
+        base = base - 'A' + 'a';
+
+    if(base == 't')
     {
         *out = 0;
         return 1;
     }
-    else if(*base == 'c' || *base == 'C')
+    else if(base == 'c')
     {
         *out = 1;
         return 1;
     }
-    else if(*base == 'a' || *base == 'A')
+    else if(base == 'a')
     {
         *out = 2;
         return 1;
     }
-    else if(*base == 'g' || *base == 'G')
+    else if(base == 'g')
     {
         *out = 3;
         return 1;
+    }
+    else 
+    {
+        unsigned int i = 0;
+        for(i = 0; i < 12; i++)
+        {
+            if(base == GENERIC[i])
+            {
+                *out = 4;
+                return 1;
+            }
+        }
     }
     
     return 0;
@@ -138,6 +155,11 @@ void reverse(char* c, unsigned int len)
 inline void 
 translate_codon(unsigned int a, unsigned int  b, unsigned int c, char* out)
 {
+    if( (a > 3) || (b > 3) || (c > 3))
+    {
+        *out = 'X';
+        return;
+    }
     *out = DNA2AMINO[16*a + 4 * b + c];
 }
 
@@ -151,11 +173,10 @@ void unknown_base(char base, unsigned int position)
 static PyObject *
 sixFrameTranslation(PyObject *self, PyObject *args)
 {
-    printf("sixFrameTranslation");
     const char * iseq = NULL;
     unsigned int ilen = 0;
 
-    if(!PyArg_ParseTuple(args, "s#:sixFrameTranslation", iseq, ilen))
+    if(!PyArg_ParseTuple(args, "s#:sixFrameTranslation", &iseq, &ilen))
     {
         return NULL;
     }
@@ -167,55 +188,82 @@ sixFrameTranslation(PyObject *self, PyObject *args)
     }
 
     unsigned int olen = ilen / 3;
-    ilen = 3 * olen;
     unsigned int i;
 
     char ** oseq = malloc(6 * sizeof(char*));
 
     for(i = 0; i < 6; i++)
-        oseq[i] = malloc(olen * sizeof(char));
+    {
+        oseq[i] = malloc(olen * sizeof(char) + 1);
+        oseq[i][olen] = '\0';
+    }
+
 
     //perform the translations
-    unsigned int f = 0;
+    unsigned int f = 0, j = 0;
     unsigned int a = 0, b = 0, c = 0;
-    if(!baseAsInt(iseq, &a))
+    if(!baseAsInt(iseq[0], &a))
     {
         unknown_base(iseq[0], 0);
         clear(oseq);
         return NULL;
     }
-    if(!baseAsInt(iseq+1, &b))
+    if(!baseAsInt(iseq[1], &b))
     {
         unknown_base(iseq[1], 1);
         clear(oseq);
         return NULL;
     }
 
-    for(i = 0; i < ilen-3; i++)
+    for(i = 0; i < ilen-2; i++)
     {
-        printf("i = %d", i);
-        if(!baseAsInt(iseq + i + 2, &c))
+        if(!baseAsInt(iseq[i + 2], &c))
         {
             unknown_base(iseq[i+2], i+2);
             clear(oseq);
             return NULL;
         }
         //forward frame
-        translate_codon(a, b, c, oseq[f] + i);
+        translate_codon(a, b, c, oseq[f] + j);
         //reverse frame
-        translate_codon(c, b, a, oseq[f+3] + i);
+        translate_codon((c+2)%4, (b+2)%4, (a+2)%4, oseq[f+3] + j);
+
+        f++;
+        if(f >= 3)
+        {
+            f = 0;
+            j++;
+        }
 
         a = b;
         b = c;
     }
 
+    //make sure the terminating nulls are in the right place
+    for(f = 0; f < 3; f++)
+    {
+        oseq[f  ][(ilen-f)/3] = '\0';
+        oseq[f+3][(ilen-f)/3] = '\0';
+    }
+
     //reverse the direction of the three reverse frames
     reverse(oseq[3], olen);
-    reverse(oseq[4], olen);
-    reverse(oseq[5], olen);
+    reverse(oseq[4], (ilen-1)/3);
+    reverse(oseq[5], (ilen-2)/3);
 
-    return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], oseq[3],
-                                    oseq[4], oseq[5], oseq[6]);
+    switch(ilen % 3)
+    {
+        case 0:
+            return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], 
+                                oseq[3], oseq[5], oseq[4]);
+        case 1:
+            return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], 
+                                oseq[4], oseq[3], oseq[5]);
+        case 2:
+            return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], 
+                                oseq[5], oseq[4], oseq[3]);
+    }
+    return NULL;
 }
 
 // Module functions table.

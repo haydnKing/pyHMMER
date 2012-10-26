@@ -5,7 +5,7 @@ def read(fname):
 	return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-module1 = Extension('pyHMMER.seqConvert',
+seqConvert = Extension('pyHMMER.seqConvert',
 										sources = ['pyHMMER/seqConvert.c'])
 
 setup(
@@ -19,5 +19,5 @@ setup(
 		packages=['pyHMMER', 'tests'],
 		long_description=read('README'),
 		test_suite='tests',
-		ext_modules=[module1,],
+		ext_modules=[seqConvert,],
 		)
