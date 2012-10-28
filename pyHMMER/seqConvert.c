@@ -171,6 +171,60 @@ void unknown_base(char base, unsigned int position)
 }
 
 static PyObject *
+translate(PyObject *self, PyObject *args)
+{
+    const char * iseq = NULL;
+    unsigned int ilen = 0;
+
+    if(!PyArg_ParseTuple(args, "s#:translate", &iseq, &ilen))
+    {
+        return NULL;
+    }
+
+    if(ilen < 3)
+    {
+        PyErr_SetString(PyExc_ValueError, "sequence too short");
+        return NULL;
+    }
+
+    unsigned int olen = ilen / 3;
+    unsigned int i;
+
+    char * oseq = malloc(olen * sizeof(char)+1);
+    oseq[olen] = '\0';
+
+    unsigned int a = 0, b = 0, c = 0;
+    
+
+    for(i = 0; i < ilen-2; i+=3)
+    {
+        if(!baseAsInt(iseq[i], &a))
+        {
+            unknown_base(iseq[i], i);
+            free(oseq);
+            return NULL;
+        }
+        if(!baseAsInt(iseq[i + 1], &b))
+        {
+            unknown_base(iseq[i+1], i+1);
+            free(oseq);
+            return NULL;
+        }
+        if(!baseAsInt(iseq[i + 2], &c))
+        {
+            unknown_base(iseq[i+2], i+2);
+            free(oseq);
+            return NULL;
+        }
+
+        translate_codon(a, b, c, oseq + i/3);
+
+    }
+
+    return Py_BuildValue("s", oseq);
+}
+
+static PyObject *
 sixFrameTranslation(PyObject *self, PyObject *args)
 {
     const char * iseq = NULL;
@@ -270,8 +324,10 @@ sixFrameTranslation(PyObject *self, PyObject *args)
 
 static PyMethodDef
 module_functions[] = {
+    { "translate", translate, METH_VARARGS, 
+        "Convert a DNA sequence to its (+1 frame) Amino Acid sequence" },
     { "sixFrameTranslation", sixFrameTranslation, METH_VARARGS, 
-        "Convert a DNA sequence to it's six possible Amino Acid sequences" },
+        "Convert a DNA sequence to its six possible Amino Acid sequences" },
     { NULL }
 };
 
