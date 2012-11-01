@@ -217,11 +217,8 @@ def save(matches, f):
 		else:
 			sfmt += "\n"
 
-	print sfmt
-
 	for o in matches:
 		f.write(sfmt.format(o))
-
 				
 	if should_close:
 		f.close()
