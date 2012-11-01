@@ -30,7 +30,7 @@ test_data = {
 	'desc': ['PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]',],
 }
 
-class TestHMMRead(unittest.TestCase):
+class TestMatchRead(unittest.TestCase):
 
 	hmms = hmmfile.read('tests/data/valid.hmm')
 
@@ -64,4 +64,17 @@ class TestHMMRead(unittest.TestCase):
 		f.close()
 
 
+from pyHMMER import HMMER
 
+class Testhmmsearch(unittest.TestCase):
+
+	def check_valid(self, matches):
+		for i,m in enumerate(matches):
+			for k in test_data.iterkeys():
+				self.assertEqual(getattr(m,k), test_data[k][i], msg=
+					"matches[{}].{} = {} != {}".format(i,k,getattr(m,k),test_data[k][i]))
+
+	def test_search(self):
+		h = HMMER.hmmsearch('tests/data/valid.hmm', 'tests/data/matchtarget.fasta')
+		self.assertEqual(len(h.matches), 17)
+		self.check_valid(h.matches)

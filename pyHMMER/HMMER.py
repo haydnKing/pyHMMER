@@ -9,8 +9,7 @@ import cStringIO as StringIO
 import hmmfile, tools, tempfile, subprocess, os, re
 from subprocess import Popen, PIPE, STDOUT
 
-from matchfile import Match
-	
+import matchfile
 		
 
 class hmmsearch:
@@ -68,7 +67,12 @@ class hmmsearch:
 				if isinstance(t.seq.alphabet, ProteinAlphabet):
 					ttargets.append(t)
 				else:
-					ttargets = ttargets + tools.getSixFrameTranslation(t)
+					try:
+						#looks like we might have to convert
+						ttargets = ttargets + tools.getSixFrameTranslation(t)
+					except ValueError:
+						#probably was a protein after all
+						ttargets.append(t)
 
 		#write the HMM to a temporary file
 		hmm_file = tempfile.NamedTemporaryFile()
@@ -90,7 +94,7 @@ class hmmsearch:
 
 		#TODO: Check stdout for errors
 
-		self.matches = matchfile.load(outfile, self.hmm, self.targets)
+		self.matches = matchfile.load(out_file, self.hmm, self.targets)
 
 		out_file.close()
 		hmm_file.close()
