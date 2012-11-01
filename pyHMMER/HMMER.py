@@ -50,6 +50,11 @@ class Match:
 			return self.target
 		return "<Unknown>"
 
+	def getFrame(self):
+		if self.frame and self.frame in range(-3,3):
+			return self.frame
+		return 0
+
 	def getQuery(self):
 		if self.query:
 			return self.query
@@ -226,7 +231,6 @@ class hmmsearch:
 
 			m = re.search(r"frame:\s(?P<frame>[+-]?\d)", match.description)
 			if m:
-				print "m.group(0) = %s" % m.group(0)
 				match.frame = int(m.group("frame"))
 				match.translation['target'] = 'DNA'
 			match.translation['query'] = hmm_alpha
@@ -245,22 +249,10 @@ class hmmsearch:
 		for t in self.targets:
 			l[t.name] = list()
 
-		class minimatch:
-			def __init__(self, m):
-				self.match = m
-				self.span = m.getSpan()
-				self.span = (min(self.span), max(self.span),)
-				self.score = m.score
-
-			def overlaps(self, m):
-				# either m starts in me OR m ends in me OR m contains me
-				return ( (self.span[0] < m.span[0] and self.span[1] > m.span[0]) or
-								 (self.span[0] < m.span[1] and self.span[1] > m.span[1]) or
-								 (self.span[0] > m.span[0] and self.span[1] < m.span[1]))
 
 		#add each match to the list
 		for m in self.matches:
-			l[m.target.name].append(minimatch(m))
+			l[m.target.name].append(self.minimatch(m))
 
 		for m in l.itervalues():
 			#sort ascending start positions
@@ -298,7 +290,70 @@ class hmmsearch:
 					#conflict[0] no longer conflicts with anything, so accept it
 					conflict.pop(0)
 
+	def filter(self, mindist=0, maxdist=None, minlen=0, maxlen=None, minscore=0):
+		"""Filter the matches as defined by the arguments
+				Nb. The order in which the filtering takes place is not guarenteed - 
+						If you want to filter by multiple things (e.g. length then
+						distance) you should make multiple calls to filter
+			mindist: minimum distance to another match
+			maxdist: maximum distance to another match
+			minlen: minimum length of a match envelope
+			maxlen: maximum length of a match envelope
+			minscore: minimum score of a match
+		"""
+		to_remove = []
+		for i,m in enumerate(self.matches):
+			l = abs(m.env_to - m.env_from)
+			if minlen:
+				if l < minlen:
+					to_remove.append(m)
+			if maxlen:
+				if l > maxlen:
+					to_remove.append(m)
+			if minscore:
+				if m.score < minscore:
+					to_remove.append(m)
+		
+		
+		#if we need to filter based distance
+		if mindist or maxdist:
+			#sort based on target and frame
+			l = dict()
+			for t in self.targets:
+				l[t.name] = [ [],[],[],[],[],[],[],]
+			for m in self.matches:
+				if m.frame:
+					l[m.target.name][m.getFrame()].append(self.minimatch(m))
 
+			def group(lst):
+				for i in range(0,len(lst)):
+					yield (lst[i-1],lst[i],lst[(i+1)%len(lst)])
+
+			print "l = %s" % l
+			#for each target
+			for frames in l.itervalues():
+				print "frames = %s" % frames
+				#for each frame in the target
+				for frame in frames:
+					print "frame = %s" % frame
+					#sort the frame on ascending start position
+					frame.sort(key=lambda m: m.span[0])
+					#for each match in the frame
+					for a,b,c in group(frame):
+						#find the distance to the closest match
+						dist = min(b.dist(a), b.dist(c))
+						if mindist and dist < mindist:
+							to_remove.append(b)
+						if maxdist and dist > maxdist:
+							to_remove.append(b)
+		
+		#remove all the matches which have failed
+		for m in to_remove:
+			try:
+				self.matches.remove(m)
+			except ValueError:
+				pass
+			
 	def extractSequences(self):
 		"""Extract the sequences from the remaining matches from the database"""
 		pass
@@ -320,6 +375,40 @@ class hmmsearch:
 	def __getitem__(self, i):
 		return self.matches[i]
 
+	class minimatch:
+		def __init__(self, m):
+			self.match = m
+			self.span = m.getSpan()
+			self.span = (min(self.span), max(self.span),)
+			self.score = m.score
+
+		def overlaps(self, m):
+			# either m starts in me OR m ends in me OR m contains me
+			return ( (self.span[0] < m.span[0] and self.span[1] > m.span[0]) or
+							 (self.span[0] < m.span[1] and self.span[1] > m.span[1]) or
+							 (self.span[0] > m.span[0] and self.span[1] < m.span[1]))
+
+		def dist(self, m):
+			"""return the closest distance to m or None if the target or the frame
+			are not equal			
+			"""
+			if (m.match.getTarget() != self.match.getTarget() or
+					m.match.getFrame() != self.match.getFrame()):
+				return None
+			t = m.match.getTarget()
+			if isinstance(t, basestring):
+				return None
+
+			if self.span[0] < m.span[0]:
+				d1 = m.span[0] - self.span[1]
+ 				d2 = len(t.seq) - (m.span[1] - self.span[0])
+			else:
+				d1 = self.span[0] - m.span[1]
+				d2 = len(t.seq) - (self.span[1] - m.span[0])
+
+			if abs(d1) < abs(d2):
+				return d1
+			return d2
 
 def test_deps():
 	"""Test that all the required binaries are present"""
@@ -358,7 +447,6 @@ def test_deps():
 
 	for b in bins:
 		if not which(b[0]):
-			print b
 			failed.append('Failed to find \'{}\' from package \'{}\'. ' 
 					'Please install it from {}'.format(*b))
 
