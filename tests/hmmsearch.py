@@ -1,6 +1,6 @@
 from pyHMMER import hmmfile, matchfile
 from Bio import SeqIO
-import unittest, tempfile
+import unittest, tempfile, re
 
 test_data = {
 	't_name': ['gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|',],
@@ -30,6 +30,17 @@ test_data = {
 	'desc': ['PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]',],
 }
 
+def check_valid(self, matches):
+	for i,m in enumerate(matches):
+		for k in test_data.iterkeys():
+			if re.search(r"_to$|_from$", k):
+				v = getattr(m,k) + 1
+			else:
+				v = getattr(m,k)
+			self.assertEqual(v, test_data[k][i], msg=
+				"matches[{}].{} = {} != {}".format(i,k,getattr(m,k),test_data[k][i]))
+
+
 class TestMatchRead(unittest.TestCase):
 
 	hmms = hmmfile.read('tests/data/valid.hmm')
@@ -44,10 +55,7 @@ class TestMatchRead(unittest.TestCase):
 		self.assertEqual(len(self.matches), 17)
 
 	def test_values(self):
-		for i,m in enumerate(self.matches):
-			for k in test_data.iterkeys():
-				self.assertEqual(getattr(m,k), test_data[k][i], msg=
-					"matches[{}].{} = {} != {}".format(i,k,getattr(m,k),test_data[k][i]))
+		check_valid(self, self.matches)	
 
 	def test_writeread(self):
 		f = tempfile.TemporaryFile('w+r')
@@ -57,9 +65,7 @@ class TestMatchRead(unittest.TestCase):
 
 		m2 = matchfile.load(f, self.hmms, self.targets)
 
-		for i,m in enumerate(m2):
-			for k in test_data.iterkeys():
-				self.assertEqual(getattr(m,k), test_data[k][i])
+		check_valid(self, m2)
 
 		f.close()
 
@@ -68,13 +74,7 @@ from pyHMMER import HMMER
 
 class Testhmmsearch(unittest.TestCase):
 
-	def check_valid(self, matches):
-		for i,m in enumerate(matches):
-			for k in test_data.iterkeys():
-				self.assertEqual(getattr(m,k), test_data[k][i], msg=
-					"matches[{}].{} = {} != {}".format(i,k,getattr(m,k),test_data[k][i]))
-
 	def test_search(self):
 		h = HMMER.hmmsearch('tests/data/valid.hmm', 'tests/data/matchtarget.fasta')
 		self.assertEqual(len(h.matches), 17)
-		self.check_valid(h.matches)
+		check_valid(self, h.matches)

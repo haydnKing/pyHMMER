@@ -63,9 +63,20 @@ class Match:
 	def getEnvPos(self):
 		return self._map_position((self.env_from, self.env_to))
 
-	def getSpan(self):
-		start = self.env_from - self.hmm_from
-		end = self.env_to + (self.query.LENG - self.hmm_to)
+	def getSpan(selfi, mode='hmm'):
+		mode = mode.lower()
+		if mode == 'hmm':
+			start = self.ali_from - self.hmm_from
+			end = self.ali_to + (self.query.LENG - self.hmm_to)
+		elif mode == 'env':
+			start = self.env_from
+			end = self.env_to
+		elif mode == 'ali':
+			start = self.ali_from
+			end = self.ali_to
+		else:
+			raise ValueError("Invalid mode \'{}\', " +
+				"must be \'hmm\', \'env\' or \'ali\'".format(mode))
 		return self._map_position((start,end))
 
 	def getIncreasingSpan(self):
@@ -75,6 +86,14 @@ class Match:
 	def isTranslation(self):
 		"""return true if the target and hmm have different alphabets"""
 		return self.translation['query'].lower() != self.translation['target'].lower()
+
+	def getSequence(self, mode='hmm'):
+		"""get the sequence of the match
+			mode: either 'hmm', 'ali' or 'env' depending on which region of the 
+				sequence is required
+		"""
+		span = self.getSpan(mode)
+		return self.target.seq[span[0]:span[1]]
 
 	def _map_position(self, pos):
 		"""Map the position given onto the target"""
@@ -244,16 +263,28 @@ def save(matches, f):
 	sfmt = ""
 	for fmt in format_list:
 		if fmt.has_key('prec'):
-			sfmt += "{{0.{name}:{just}{len:d}.{prec:d}{type}}}".format(**fmt)
+			sfmt += "{{{name}:{just}{len:d}.{prec:d}{type}}}".format(**fmt)
 		else:
-			sfmt += "{{0.{name}:{just}{len:d}{type}}}".format(**fmt)
+			sfmt += "{{{name}:{just}{len:d}{type}}}".format(**fmt)
 		if fmt != format_list[-1]:
 			sfmt += " "
 		else:
 			sfmt += "\n"
 
+	#convert to 1-offset and write
+	out = []
 	for o in matches:
-		f.write(sfmt.format(o))
+		o_ = dict()
+		for fmt in format_list:
+			v = getattr(o, fmt['name'])
+			if re.search(r"_from$|_to$", fmt['name']):
+				v = int(v) + 1
+			o_[fmt['name']] = v
+		out.append(o_)
+
+
+	for o in out:
+		f.write(sfmt.format(**o))
 				
 	if should_close:
 		f.close()
@@ -312,6 +343,8 @@ def load(f, hmms, targets):
 			if fmt['type'] in ['f','g',]:
 				setattr(match, fmt['name'], float(v))
 			elif fmt['type'] == 'd':
+				if re.search(r"_from$|_to$", fmt['name']):
+					v = int(v) - 1
 				setattr(match, fmt['name'], int(v))
 			else:
 				setattr(match, fmt['name'], str(v))
