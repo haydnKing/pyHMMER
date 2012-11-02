@@ -14,7 +14,13 @@ import matchfile
 
 class hmmsearch:
 	"""Search for an HMM in a database and collect the results"""
-	def __init__(self, hmm, targets):
+
+	def __init__(self, hmm = None, targets = None):
+		"""Initialise - search if hmm and targets have been provided"""
+		if hmm and targets:
+			self.search(hmm, targets)
+
+	def search(self, hmm, targets):
 		"""Perform the search
 				hmm: a file name or an HMM object which has been loaded from a file
 				targets: the sequences to search - a fasta filename or one or 
@@ -100,8 +106,10 @@ class hmmsearch:
 		hmm_file.close()
 		target_file.close()
 
-	def discardOverlaps(self):
-		"""Remove overlaping sequences from the results
+	def mindist(self, dist=0):
+		"""
+			Filter the results so that each match has a minimum number of dist
+			symbols between it and the next match in the same frame
 		"""
 		#construct a list of ranges for each target frame
 		l = dict()
@@ -111,7 +119,7 @@ class hmmsearch:
 
 		#add each match to the list
 		for m in self.matches:
-			l[m.target.name].append(self.minimatch(m))
+			l[m.target.name].append(m)
 
 		for m in l.itervalues():
 			#sort ascending start positions
@@ -234,40 +242,6 @@ class hmmsearch:
 	def __getitem__(self, i):
 		return self.matches[i]
 
-	class minimatch:
-		def __init__(self, m):
-			self.match = m
-			self.span = m.getSpan()
-			self.span = (min(self.span), max(self.span),)
-			self.score = m.score
-
-		def overlaps(self, m):
-			# either m starts in me OR m ends in me OR m contains me
-			return ( (self.span[0] < m.span[0] and self.span[1] > m.span[0]) or
-							 (self.span[0] < m.span[1] and self.span[1] > m.span[1]) or
-							 (self.span[0] > m.span[0] and self.span[1] < m.span[1]))
-
-		def dist(self, m):
-			"""return the closest distance to m or None if the target or the frame
-			are not equal			
-			"""
-			if (m.match.getTarget() != self.match.getTarget() or
-					m.match.getFrame() != self.match.getFrame()):
-				return None
-			t = m.match.getTarget()
-			if isinstance(t, basestring):
-				return None
-
-			if self.span[0] < m.span[0]:
-				d1 = m.span[0] - self.span[1]
- 				d2 = len(t.seq) - (m.span[1] - self.span[0])
-			else:
-				d1 = self.span[0] - m.span[1]
-				d2 = len(t.seq) - (self.span[1] - m.span[0])
-
-			if abs(d1) < abs(d2):
-				return d1
-			return d2
 
 def test_deps():
 	"""Test that all the required binaries are present"""

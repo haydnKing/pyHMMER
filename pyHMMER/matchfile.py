@@ -68,6 +68,10 @@ class Match:
 		end = self.env_to + (self.query.LENG - self.hmm_to)
 		return self._map_position((start,end))
 
+	def getIncreasingSpan(self):
+		s = self.getSpan()
+		return (min(s), max(s),)
+
 	def isTranslation(self):
 		"""return true if the target and hmm have different alphabets"""
 		return self.translation['query'].lower() != self.translation['target'].lower()
@@ -93,6 +97,37 @@ class Match:
 						.format(**self.translation))
 		else:
 			return pos
+	
+	def overlaps(self, m):
+		# either m starts in me OR m ends in me OR m contains me
+		s1 = self.getIncreasingSpan()
+		s2 = m.getIncreasingSpan()
+
+		return ( (self.span[0] < m.span[0] and self.span[1] > m.span[0]) or
+						 (self.span[0] < m.span[1] and self.span[1] > m.span[1]) or
+						 (self.span[0] > m.span[0] and self.span[1] < m.span[1]))
+
+	def dist(self, m):
+		"""return the closest distance to m or None if the target or the frame
+		are not equal			
+		"""
+		if (m.match.getTarget() != self.match.getTarget() or
+				m.match.getFrame() != self.match.getFrame()):
+			return None
+		t = m.match.getTarget()
+		if isinstance(t, basestring):
+			return None
+
+		if self.span[0] < m.span[0]:
+			d1 = m.span[0] - self.span[1]
+			d2 = len(t.seq) - (m.span[1] - self.span[0])
+		else:
+			d1 = self.span[0] - m.span[1]
+			d2 = len(t.seq) - (self.span[1] - m.span[0])
+
+		if abs(d1) < abs(d2):
+			return d1
+		return d2
 
 	def __unicode__(self):
 		return self.fmt.format(self.target.name, self.query.NAME, self.number,
