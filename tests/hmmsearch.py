@@ -1,4 +1,4 @@
-from pyHMMER import hmmfile, matchfile
+from pyHMMER import hmmfile, matchfile, sequtils
 from Bio import SeqIO
 import unittest, tempfile, re
 
@@ -29,6 +29,9 @@ test_data = {
 	'acc': [0.92,0.84,0.98,0.97,0.97,0.95,0.98,0.96,0.92,0.98,0.97,0.96,0.97,0.98,0.95,0.97,0.68,		], 
 	'desc': ['PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]',],
 }
+
+hmm_seq = "SCEAGFGGESLKLQSGFHEIKGLEDAIDLFSDML"
+ali_seq = "LEDAIDLFSD"
 
 def check_valid(self, matches):
 	for i,m in enumerate(matches):
@@ -69,6 +72,11 @@ class TestMatchRead(unittest.TestCase):
 
 		f.close()
 
+	def test_aliseq(self):
+		self.assertEqual(str(self.matches[0].getSequence('ali')), ali_seq)
+
+	def test_hmmseq(self):
+		self.assertEqual(str(self.matches[0].getSequence('hmm')), hmm_seq)
 
 from pyHMMER import HMMER
 
@@ -78,3 +86,10 @@ class Testhmmsearch(unittest.TestCase):
 		h = HMMER.hmmsearch('tests/data/valid.hmm', 'tests/data/matchtarget.fasta')
 		self.assertEqual(len(h.matches), 17)
 		check_valid(self, h.matches)
+
+	def test_translation_search(self):
+		h = HMMER.hmmsearch('tests/data/valid.hmm', 
+				'tests/data/reversedmatchtarget.fasta')
+		self.assertEqual(len(h.matches), 17)
+		s = sequtils.translate(str(h.matches[0].getSequence()))
+		self.assertEqual(s, hmm_seq)

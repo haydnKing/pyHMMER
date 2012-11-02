@@ -1,4 +1,4 @@
-// seqConvert: translate sequences between alphabets
+// sequtils: useful sequence things
 
 #include "Python.h"
 
@@ -88,11 +88,18 @@ const char DNA2AMINO[] = {
     'G',   //GGG
 };
 
-const char GENERIC[] = "mrwsykvhdbnx";
+const char GENERIC_DNA[] = "gatcrywsmkhbvdn";
+const char GENERIC_RNA[] = "gaucrywsmkhbvdn";
+const char GENERIC_AMINO[] = "acdefghiklmnpqrstvwy";
+
+const unsigned int DNA_LEN = 15;
+const unsigned int RNA_LEN = 15;
+const unsigned int AMINO_LEN = 20;
+
 
 inline int baseAsInt(char base, unsigned int* out)
 {
-    if(base >= 'A')
+    if(base < 'a')
         base = base - 'A' + 'a';
 
     if(base == 't')
@@ -118,9 +125,9 @@ inline int baseAsInt(char base, unsigned int* out)
     else 
     {
         unsigned int i = 0;
-        for(i = 0; i < 12; i++)
+        for(i = 0; i < DNA_LEN; i++)
         {
-            if(base == GENERIC[i])
+            if(base == GENERIC_DNA[i])
             {
                 *out = 4;
                 return 1;
@@ -320,10 +327,89 @@ sixFrameTranslation(PyObject *self, PyObject *args)
     return NULL;
 }
 
+static PyObject *
+seq_type(PyObject *self, PyObject *args)
+{
+    const char * iseq = NULL;
+    unsigned int ilen = 0;
+
+    if(!PyArg_ParseTuple(args, "s#:seq_type", &iseq, &ilen))
+    {
+        return NULL;
+    }
+
+    int DNA = 1, RNA = 1, AMINO = 1, TMP;
+    unsigned int i, j;
+    char c;
+    for(i = 0; i < ilen; i++)
+    {
+        c = iseq[i];
+        
+        if(c < 'a')
+        {
+            c = c - 'A' + 'a';
+        }
+
+        if(DNA)
+        {
+            TMP = 0;
+            for(j = 0; j < DNA_LEN; j++)
+            {
+                if(GENERIC_DNA[j] == c)
+                    TMP = 1;
+            }
+            if(TMP == 0)
+            {
+                DNA = 0;
+            }
+        }
+        if(RNA)
+        {
+            TMP = 0;
+            for(j = 0; j < RNA_LEN; j++)
+            {
+                if(GENERIC_RNA[j] == c)
+                    TMP = 1;
+            }
+            if(TMP == 0)
+            {
+                RNA = 0;
+            }
+        }
+        if(AMINO)
+        {
+            TMP = 0;
+            for(j = 0; j < AMINO_LEN; j++)
+            {
+                if(GENERIC_AMINO[j] == c)
+                    TMP = 1;
+            }
+            if(TMP == 0)
+            {
+                AMINO = 0;
+            }
+        }
+    }
+
+    if(DNA)
+        return Py_BuildValue("s", "DNA");
+    if(RNA)
+        return Py_BuildValue("s", "RNA");
+    if(AMINO)
+        return Py_BuildValue("s", "AMINO");
+
+    PyErr_SetString(PyExc_ValueError, "Unknown Alphabet");
+    return NULL;
+}
+
+
 // Module functions table.
 
 static PyMethodDef
 module_functions[] = {
+    { "seq_type", seq_type, METH_VARARGS,
+        "Attempt to guess the type of the sequence. Return \"DNA\", \"RNA\" "
+        "or \"AMINO\""},
     { "translate", translate, METH_VARARGS, 
         "Convert a DNA sequence to its (+1 frame) Amino Acid sequence" },
     { "sixFrameTranslation", sixFrameTranslation, METH_VARARGS, 
@@ -334,8 +420,8 @@ module_functions[] = {
 // This function is called to initialize the module.
 
 void
-initseqConvert(void)
+initsequtils(void)
 {
-    Py_InitModule3("seqConvert", module_functions, 
-        "Translate simple string sequences between alphabets");
+    Py_InitModule3("sequtils", module_functions, 
+        "Various sequence tools");
 }

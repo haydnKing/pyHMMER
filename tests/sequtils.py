@@ -1,8 +1,8 @@
-from pyHMMER import seqConvert
+from pyHMMER import sequtils
 import unittest
 
 test = ("TTTTTCTTATTGTCTTCCTCATCGTATTACTAATAGTGTTGCTGATGGCTTCTCCTACTGCCTCCCC" +
- "CACCGCATCACCAACAGCGTCGCCGACGGATTATCATAATGACTACCACAACGAATAACAAAAAGAGTAGCAGA" +
+ "CACCGCATCACCAACAGCGTCGCCGACGGATTATcATAATGACTACCACAACGAATAACAAAAAGAGTAGCAGA" +
  "AGGGTTGTCGTAGTGGCTGCCGCAGCGGATGACGAAGAGGGTGGCGGAGGG")
 
 translation ="FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG"
@@ -20,19 +20,29 @@ six_frame = (
 class TestConversion(unittest.TestCase):
 
 	def test_translation(self):
-		s = seqConvert.translate(test)
+		s = sequtils.translate(test)
 		self.assertEqual(s,translation)
 
 	def test_sixFrame(self):
-		c = seqConvert.sixFrameTranslation(test)
+		c = sequtils.sixFrameTranslation(test)
 		self.assertEqual(c, six_frame)
 
 	def test_minLength(self):
-		self.assertRaises(ValueError, seqConvert.translate, 'aa')
-		self.assertRaises(ValueError, seqConvert.sixFrameTranslation, 'aa')
+		self.assertRaises(ValueError, sequtils.translate, 'aa')
+		self.assertRaises(ValueError, sequtils.sixFrameTranslation, 'aa')
 
 	def test_invalidChar(self):
-		self.assertRaises(ValueError, seqConvert.translate, 'aaaaaf')
-		self.assertRaises(ValueError, seqConvert.sixFrameTranslation, 'aaaaaajk')
+		self.assertRaises(ValueError, sequtils.translate, 'aaaaaf')
+		self.assertRaises(ValueError, sequtils.sixFrameTranslation, 'aaaaaajk')
 
 	
+class TestItentification(unittest.TestCase):
+
+	def test_dna(self):
+		self.assertEqual(sequtils.seq_type('ATGCAtGA'), 'DNA')
+
+	def test_rna(self):
+		self.assertEqual(sequtils.seq_type('AUGCAuGA'), 'RNA')
+
+	def test_amino(self):
+		self.assertEqual(sequtils.seq_type('LEDaIDLFSD'), 'AMINO')

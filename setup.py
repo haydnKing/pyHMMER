@@ -5,8 +5,8 @@ def read(fname):
 	return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-seqConvert = Extension('pyHMMER.seqConvert',
-										sources = ['pyHMMER/seqConvert.c'])
+seqConvert = Extension('pyHMMER.sequtils',
+										sources = ['pyHMMER/sequtils.c'])
 
 setup(
 		name = "pyHMMER",

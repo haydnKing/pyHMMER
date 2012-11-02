@@ -1,5 +1,5 @@
 """Read and Write HMMER's match format"""
-import re
+import re, sequtils
 
 class Match:
 	"""Represents an HMM match"""
@@ -63,7 +63,7 @@ class Match:
 	def getEnvPos(self):
 		return self._map_position((self.env_from, self.env_to))
 
-	def getSpan(selfi, mode='hmm'):
+	def getSpan(self, mode='hmm'):
 		mode = mode.lower()
 		if mode == 'hmm':
 			start = self.ali_from - self.hmm_from
@@ -93,6 +93,9 @@ class Match:
 				sequence is required
 		"""
 		span = self.getSpan(mode)
+		
+		if span[0] > span[1]:
+			return self.target.seq[span[1]:span[0]].reverse_complement()
 		return self.target.seq[span[0]:span[1]]
 
 	def _map_position(self, pos):
@@ -105,11 +108,11 @@ class Match:
 				#and find my position within it
 				ret = (3 * pos[0], 3* pos[1])
 				if self.frame not in [1,2,3,-1,-2,-3]:
-					raise ValueError("Nonsensical Frame \'{}\'" % self.frame)
+					raise ValueError("Nonsensical Frame \'{}\'".format(self.frame))
 				if self.frame > 0:
 					ret = tuple(x+self.frame-1 for x in ret)
 				elif self.frame < 0:
-					ret = tuple(l-1-x for x in ret)
+					ret = tuple(l-x for x in ret)
 				return ret
 			else:
 				raise ValueError("Unhandled Translation {query} to {target}"
@@ -150,9 +153,9 @@ class Match:
 
 	def __unicode__(self):
 		return self.fmt.format(self.target.name, self.query.NAME, self.number,
-				self.cEvalue, self.iEvalue, self.score, self.hmm_from, self.hmm_to,
+				self.c_evalue, self.i_evalue, self.score, self.hmm_from, self.hmm_to,
 				self.ali_from, self.ali_to, self.env_from, self.env_to, 
-				self.description)
+				self.desc)
 
 	def __str__(self):
 		return unicode(self).encode('utf-8')
@@ -352,11 +355,12 @@ def load(f, hmms, targets):
 		match.desc = " ".join(l[22:])
 
 		#is there frame information attached?
-		m = re.search(r"frame:\s(?P<frame>[+-]?\d)", match.description)
+		m = re.search(r"frame:\s(?P<frame>[+-]?\d)", match.desc)
 		if m:
 			match.frame = int(m.group("frame"))
 			match.translation['target'] = 'DNA'
-			match.translation['query'] = 'AMINO'
+		if match.target:
+			match.translation['target'] = sequtils.seq_type(str(match.target.seq))
 		if hmm_alpha:
 			match.translation['query'] = hmm_alpha
 

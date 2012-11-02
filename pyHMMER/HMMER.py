@@ -108,18 +108,11 @@ class hmmsearch:
 
 	def mindist(self, dist=0):
 		"""
-			Filter the results so that each match has a minimum number of dist
-			symbols between it and the next match in the same frame
+			Filter the results so that each match has at least dist symbols
+			between it and the next match in the same frame
 		"""
-		#construct a list of ranges for each target frame
-		l = dict()
-		for t in self.targets:
-			l[t.name] = list()
-
-
-		#add each match to the list
-		for m in self.matches:
-			l[m.target.name].append(m)
+		#construct a list of matches for each target frame
+		l = self._get_by_frame()
 
 		for m in l.itervalues():
 			#sort ascending start positions
@@ -157,16 +150,11 @@ class hmmsearch:
 					#conflict[0] no longer conflicts with anything, so accept it
 					conflict.pop(0)
 
-	def filter(self, mindist=0, maxdist=None, minlen=0, maxlen=None, minscore=0):
+	def filter(self, minlen=0, maxlen=None, minscore=0):
 		"""Filter the matches as defined by the arguments
-				Nb. The order in which the filtering takes place is not guarenteed - 
-						If you want to filter by multiple things (e.g. length then
-						distance) you should make multiple calls to filter
-			mindist: minimum distance to another match
-			maxdist: maximum distance to another match
-			minlen: minimum length of a match envelope
-			maxlen: maximum length of a match envelope
-			minscore: minimum score of a match
+				minlen: minimum length of a match envelope
+				maxlen: maximum length of a match envelope
+				minscore: minimum score of a match
 		"""
 		to_remove = []
 		for i,m in enumerate(self.matches):
@@ -181,39 +169,6 @@ class hmmsearch:
 				if m.score < minscore:
 					to_remove.append(m)
 		
-		
-		#if we need to filter based distance
-		if mindist or maxdist:
-			#sort based on target and frame
-			l = dict()
-			for t in self.targets:
-				l[t.name] = [ [],[],[],[],[],[],[],]
-			for m in self.matches:
-				if m.frame:
-					l[m.target.name][m.getFrame()].append(self.minimatch(m))
-
-			def group(lst):
-				for i in range(0,len(lst)):
-					yield (lst[i-1],lst[i],lst[(i+1)%len(lst)])
-
-			print "l = %s" % l
-			#for each target
-			for frames in l.itervalues():
-				print "frames = %s" % frames
-				#for each frame in the target
-				for frame in frames:
-					print "frame = %s" % frame
-					#sort the frame on ascending start position
-					frame.sort(key=lambda m: m.span[0])
-					#for each match in the frame
-					for a,b,c in group(frame):
-						#find the distance to the closest match
-						dist = min(b.dist(a), b.dist(c))
-						if mindist and dist < mindist:
-							to_remove.append(b)
-						if maxdist and dist > maxdist:
-							to_remove.append(b)
-		
 		#remove all the matches which have failed
 		for m in to_remove:
 			try:
@@ -224,6 +179,16 @@ class hmmsearch:
 	def extractSequences(self):
 		"""Extract the sequences from the remaining matches from the database"""
 		pass
+
+	def _get_by_frame(self):
+		r = dict()
+		for t in self.targets:
+			r[t.name] = [[], [], [], [], [], [], [],]
+
+		for m in self.matches:
+			r[m.target.name][m.frame].append(m)
+
+		return r
 
 	def __unicode__(self):
 		ret = "Found {:d} matches\n".format(len(self.matches))
