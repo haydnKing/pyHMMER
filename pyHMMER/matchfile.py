@@ -19,24 +19,16 @@ class Match:
 	def __init__(self):
 		self.target = None
 		self.query = None
-		self.number = 0
-		self.c_evalue = 0
-		self.i_evalue = 0
-		self.score = 0
-
-		self.hmm_from = 0
-		self.hmm_to = 0
-
-		self.ali_from = 0
-		self.ali_to = 0
-
-		self.env_from = 0
-		self.env_to = 0
-
-		self.description = ""
-
 		self.translation = {'query': 'DNA', 'target': 'DNA',}
 		self.frame = 0
+
+		for fmt in format_list:
+			if fmt.type == 's':
+				setattr(self, fmt.name, "")
+			elif fmt.type == 'd':
+				setattr(self, fmt.name, int(0))
+			elif fmt.type in ['g', 'f',]:
+				setattr(self, fmt.name, float(0.0))
 
 	def getTarget(self):
 		if self.target:
