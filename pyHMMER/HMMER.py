@@ -106,7 +106,7 @@ class hmmsearch:
 		hmm_file.close()
 		target_file.close()
 
-	def mindist(self, dist=0, mode='hmm'):
+	def mindist(self, dist=0, mode='hmm', verb=False):
 		"""
 			Filter the results so that each match has at least dist symbols
 			between it and the next match in the same frame
@@ -127,7 +127,7 @@ class hmmsearch:
 							break
 						#otherwise add it to the conflict
 						conflict.append(m_)
-					
+
 					#deal with all the items in this conflicting group
 					for c in conflict:
 						frame.remove(c)
@@ -138,7 +138,7 @@ class hmmsearch:
 						continue
 					
 					#otherwise, sort by score
-					conflict.sort(key=lambda item: item.score)
+					conflict.sort(key=lambda item: item.match.score)
 					conflict.reverse()
 					#continue until there aren't any more conflicts
 					while len(conflict):
@@ -219,11 +219,10 @@ class hmmsearch:
 
 		def overlaps(self, m, dist=0):
 			# either m starts in me OR m ends in me OR m contains me
-			d = dist / 2
-			s1 = self.span[0] - d
-			e1 = self.span[1] + d
-			s2 = m.span[0] - d
-			e2 = m.span[1] + d
+			s1 = self.span[0] 
+			e1 = self.span[1] + dist
+			s2 = m.span[0]
+			e2 = m.span[1] + dist
 
 			return ( (s1 < s2 and e1 > s2) or #m starts in me
 							 (s1 < e2 and e1 > e2) or #m ends in me
