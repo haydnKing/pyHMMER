@@ -164,7 +164,7 @@ class hmmsearch:
 				yield (None, lst[0], None)
 				return
 
-			for i in range(0:len(lst)-2)
+			for i in range(0,len(lst)-2):
 				yield (lst[i-1], lst[i], lst[i+1])
 
 			yield (lst[-2],lst[-1],lst[0])

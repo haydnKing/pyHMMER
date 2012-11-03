@@ -23,12 +23,12 @@ class Match:
 		self.frame = 0
 
 		for fmt in format_list:
-			if fmt.type == 's':
-				setattr(self, fmt.name, "")
-			elif fmt.type == 'd':
-				setattr(self, fmt.name, int(0))
-			elif fmt.type in ['g', 'f',]:
-				setattr(self, fmt.name, float(0.0))
+			if fmt['type'] == 's':
+				setattr(self, fmt['name'], "")
+			elif fmt['type'] == 'd':
+				setattr(self, fmt['name'], int(0))
+			elif fmt['type'] in ['g', 'f',]:
+				setattr(self, fmt['name'], float(0.0))
 
 	def getTarget(self):
 		if self.target:
@@ -74,7 +74,7 @@ class Match:
 
 	def getTargetSpan(self, mode='hmm'):
 		"""Get the span of the match mapped onto the target sequence"""	
-		return self._map_position(self.getFrameSpan())
+		return self._map_position(self.getFrameSpan(mode))
 
 	def isTranslation(self):
 		"""return true if the target and hmm have different alphabets"""
