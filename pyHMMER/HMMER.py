@@ -159,22 +159,24 @@ class hmmsearch:
 		l = self._get_by_frame(mode)
 		to_remove = list()
 
-		def group(lst):
-			if len(lst < 2):
+		def d(lst):
+			if len(lst) == 0:
+				return
+			if len(lst) == 1:
 				yield (None, lst[0], None)
 				return
 
-			for i in range(0,len(lst)-2):
-				yield (lst[i-1], lst[i], lst[i+1])
-
-			yield (lst[-2],lst[-1],lst[0])
+			for i in range(0,len(lst)):
+				yield (lst[i].dist(lst[i-1]), 
+									lst[i], 
+							lst[i].dist(lst[(i+1)%len(lst)]))
 
 		for target in l.itervalues():
 			for frame in target:
 				frame.sort(key=lambda item: item.span[0])
-				for a,b,c in group(frame):
-					if (b.dist(a) > dist) and (b.dist(c) > dist):
-						to_remove.append(b)
+				for a,b,c in d(frame):
+					if (a > dist) and (c > dist):
+						to_remove.append(b.match)
 
 		for r in to_remove:
 			try:

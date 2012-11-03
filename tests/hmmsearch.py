@@ -157,6 +157,7 @@ class TestFiltering(unittest.TestCase):
 		self.assertMatches(((50, 60, 1),
 												(60, 70, 1),
 												(70, 80, 1),))
+
 	def test_min_2(self):
 		"""
 			--<1>--|--<2>--|--<3>--  (d=1)  =>  --<1>--|       |--<3>--
@@ -222,3 +223,33 @@ class TestFiltering(unittest.TestCase):
 												(60, 70, 2, 1),
 												(55, 65, 1, 2),
 												(65, 75, 1, 2),))
+
+	def test_max_1(self):
+		"""
+			--<1>--|       |--<2>--  (d=2)  =>
+		"""
+		self.build_matches(((50, 60, 1),
+												(70, 80, 2),))
+		self.hs.maxdist(2, 'env')
+		self.assertMatches(tuple())
+
+	def test_max_2(self):
+		"""
+			--<1>--|--<1>--               --<1>--  (d=5)  =>  --<1>--|--<1>--
+		"""
+		self.build_matches(((50, 60, 1),
+												(60, 70, 1),
+												(100,120, 1),))
+		self.hs.maxdist(5, 'env')
+		self.assertMatches(((50, 60, 1),
+												(60, 70, 1),))
+
+	def test_max_3(self):
+		"""
+			--<1>--     ...     --<1>--  (d=5)  =>  --<1>--   ...   --<1>--
+		"""
+		self.build_matches(((5, 25, 1),
+												(665,685, 1),))
+		self.hs.maxdist(200, 'env')
+		self.assertMatches(((5, 25, 1),
+												(665,685, 1),))
