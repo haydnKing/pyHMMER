@@ -63,7 +63,8 @@ class Match:
 	def getEnvPos(self):
 		return self._map_position((self.env_from, self.env_to))
 
-	def getSpan(self, mode='hmm'):
+	def getFrameSpan(self, mode='hmm'):
+		"""get the raw coordinates of the match"""
 		mode = mode.lower()
 		if mode == 'hmm':
 			start = self.ali_from - self.hmm_from
@@ -77,11 +78,11 @@ class Match:
 		else:
 			raise ValueError("Invalid mode \'{}\', " +
 				"must be \'hmm\', \'env\' or \'ali\'".format(mode))
-		return self._map_position((start,end))
+		return (start,end)
 
-	def getIncreasingSpan(self):
-		s = self.getSpan()
-		return (min(s), max(s),)
+	def getTargetSpan(self, mode='hmm'):
+		"""Get the span of the match mapped onto the target sequence"""	
+		return self._map_position(self.getFrameSpan())
 
 	def isTranslation(self):
 		"""return true if the target and hmm have different alphabets"""
@@ -92,7 +93,7 @@ class Match:
 			mode: either 'hmm', 'ali' or 'env' depending on which region of the 
 				sequence is required
 		"""
-		span = self.getSpan(mode)
+		span = self.getTargetSpan(mode)
 		
 		if span[0] > span[1]:
 			return self.target.seq[span[1]:span[0]].reverse_complement()
@@ -101,7 +102,7 @@ class Match:
 	def _map_position(self, pos):
 		"""Map the position given onto the target"""
 		if self.isTranslation():
-			if (self.translation['target'].upper() == 'DNA' and 
+			if (self.translation['target'].upper() in ['DNA', 'RNA'] and 
 					self.translation['query'].upper() == 'AMINO'):
 				#get the length of the target sequence
 				l = len(self.target.seq)
@@ -120,36 +121,8 @@ class Match:
 		else:
 			return pos
 	
-	def overlaps(self, m):
-		# either m starts in me OR m ends in me OR m contains me
-		s1 = self.getIncreasingSpan()
-		s2 = m.getIncreasingSpan()
 
-		return ( (self.span[0] < m.span[0] and self.span[1] > m.span[0]) or
-						 (self.span[0] < m.span[1] and self.span[1] > m.span[1]) or
-						 (self.span[0] > m.span[0] and self.span[1] < m.span[1]))
 
-	def dist(self, m):
-		"""return the closest distance to m or None if the target or the frame
-		are not equal			
-		"""
-		if (m.match.getTarget() != self.match.getTarget() or
-				m.match.getFrame() != self.match.getFrame()):
-			return None
-		t = m.match.getTarget()
-		if isinstance(t, basestring):
-			return None
-
-		if self.span[0] < m.span[0]:
-			d1 = m.span[0] - self.span[1]
-			d2 = len(t.seq) - (m.span[1] - self.span[0])
-		else:
-			d1 = self.span[0] - m.span[1]
-			d2 = len(t.seq) - (self.span[1] - m.span[0])
-
-		if abs(d1) < abs(d2):
-			return d1
-		return d2
 
 	def __unicode__(self):
 		return self.fmt.format(self.target.name, self.query.NAME, self.number,

@@ -106,49 +106,81 @@ class hmmsearch:
 		hmm_file.close()
 		target_file.close()
 
-	def mindist(self, dist=0):
+	def mindist(self, dist=0, mode='hmm'):
 		"""
 			Filter the results so that each match has at least dist symbols
 			between it and the next match in the same frame
 		"""
-		#construct a list of matches for each target frame
-		l = self._get_by_frame()
+		#construct a list of minimatches for each target frame
+		l = self._get_by_frame(mode)
 
-		for m in l.itervalues():
-			#sort ascending start positions
-			m.sort(key=lambda item: item.span[0])
-			while len(m):
-				#get all the matches in the first conflicting group
-				conflict = [m[0],]
-				for m_ in m[1:]:
-					#if m_ starts after the conflict ends
-					if m_.span[0] > conflict[-1].span[1]:
-						break
-					#otherwise add it to the conflict
-					conflict.append(m_)
-				
-				#deal with all the items in this conflicting group
-				for c in conflict:
-					m.remove(c)
+		for target in l.itervalues():
+			for frame in target:
+				#sort ascending start positions
+				frame.sort(key=lambda item: item.span[0])
+				while len(frame):
+					#get all the matches in the first conflicting group
+					conflict = [frame[0],]
+					for m_ in frame[1:]:
+						#if m_ starts after the conflict ends
+						if m_.span[0] > (dist + conflict[-1].span[1]):
+							break
+						#otherwise add it to the conflict
+						conflict.append(m_)
+					
+					#deal with all the items in this conflicting group
+					for c in conflict:
+						frame.remove(c)
 
-				#special case where there is only one item
-				if len(conflict) == 1:
-					#accept the item
-					continue
-				
-				#otherwise, sort by score
-				conflict.sort(key=lambda item: item.score)
-				conflict.reverse()
-				#continue until there aren't any more conflicts
-				while len(conflict):
-					#remove any items which overlap with the highest scoring item
-					for m_ in conflict[1:]:
-						if conflict[0].overlaps(m_):
-							#m_ overlaps a higher scoring match
-							self.matches.remove(m_.match)
-							conflict.remove(m_)
-					#conflict[0] no longer conflicts with anything, so accept it
-					conflict.pop(0)
+					#special case where there is only one item
+					if len(conflict) == 1:
+						#accept the item
+						continue
+					
+					#otherwise, sort by score
+					conflict.sort(key=lambda item: item.score)
+					conflict.reverse()
+					#continue until there aren't any more conflicts
+					while len(conflict):
+						#remove any items which overlap with the highest scoring item
+						for m_ in conflict[1:]:
+							if conflict[0].overlaps(m_, dist):
+								#m_ overlaps a higher scoring match
+								self.matches.remove(m_.match)
+								conflict.remove(m_)
+						#conflict[0] no longer conflicts with anything, so accept it
+						conflict.pop(0)
+
+	def maxdist(self, dist=0, mode='hmm'):
+		"""
+			Filter the results to remove all matches which are more than dist from
+			andother match in its frame
+		"""
+		l = self._get_by_frame(mode)
+		to_remove = list()
+
+		def group(lst):
+			if len(lst < 2):
+				yield (None, lst[0], None)
+				return
+
+			for i in range(0:len(lst)-2)
+				yield (lst[i-1], lst[i], lst[i+1])
+
+			yield (lst[-2],lst[-1],lst[0])
+
+		for target in l.itervalues():
+			for frame in target:
+				frame.sort(key=lambda item: item.span[0])
+				for a,b,c in group(frame):
+					if (b.dist(a) > dist) and (b.dist(c) > dist):
+						to_remove.append(b)
+
+		for r in to_remove:
+			try:
+				self.matches.remove(r)
+			except ValueError:
+				pass
 
 	def filter(self, minlen=0, maxlen=None, minscore=0):
 		"""Filter the matches as defined by the arguments
@@ -180,13 +212,54 @@ class hmmsearch:
 		"""Extract the sequences from the remaining matches from the database"""
 		pass
 
-	def _get_by_frame(self):
+	class _minimatch:
+		def __init__(self, m, mode='hmm'):
+			self.match = m
+			self.span = m.getFrameSpan(mode)
+
+		def overlaps(self, m, dist=0):
+			# either m starts in me OR m ends in me OR m contains me
+			d = dist / 2
+			s1 = self.span[0] - d
+			e1 = self.span[1] + d
+			s2 = m.span[0] - d
+			e2 = m.span[1] + d
+
+			return ( (s1 < s2 and e1 > s2) or #m starts in me
+							 (s1 < e2 and e1 > e2) or #m ends in me
+							 (s1 > s2 and e1 < e2)) #m contains me
+
+		def dist(self, m):
+			"""
+				return the closest distance to m or None if the target or the frame
+				are not equal			
+			"""
+			if (m.match.getTarget() != self.match.getTarget() or
+					m.match.getFrame() != self.match.getFrame()):
+				return None
+			t = m.match.getTarget()
+			if isinstance(t, basestring):
+				return None
+
+			if self.span[0] < m.span[0]:
+				d1 = m.span[0] - self.span[1]
+				d2 = len(t.seq) - (m.span[1] - self.span[0])
+			else:
+				d1 = self.span[0] - m.span[1]
+				d2 = len(t.seq) - (self.span[1] - m.span[0])
+
+			if abs(d1) < abs(d2):
+				return d1
+			return d2
+
+
+	def _get_by_frame(self, mode='hmm'):
 		r = dict()
 		for t in self.targets:
 			r[t.name] = [[], [], [], [], [], [], [],]
 
 		for m in self.matches:
-			r[m.target.name][m.frame].append(m)
+			r[m.target.name][m.frame].append(self._minimatch(m, mode))
 
 		return r
 
