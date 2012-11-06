@@ -54,6 +54,8 @@ class hmmsearch:
 			else:
 				self.targets.append(t)
 
+		print "Loading HMMs and Targets..."
+
 		ttargets = []
 		hmm_alpha = self.hmm[0].ALPH.upper()
 		for h in self.hmm:
@@ -81,6 +83,8 @@ class hmmsearch:
 						#probably was a protein after all
 						ttargets.append(t)
 
+		print "Writing Temporary Files"
+
 		#write the HMM to a temporary file
 		hmm_file = tempfile.NamedTemporaryFile()
 		target_file = tempfile.NamedTemporaryFile()
@@ -93,6 +97,8 @@ class hmmsearch:
 		target_file.flush()
 		del ttargets
 
+		print "Calling hmmsearch..."
+
 		p = Popen(['hmmsearch', '--tformat', 'fasta', 
 			'--domtblout', out_file.name, hmm_file.name, target_file.name,], 
 				stdout=PIPE, stdin=PIPE, stderr=PIPE)
@@ -100,8 +106,11 @@ class hmmsearch:
 
 
 		#TODO: Check stdout for errors
+		print "Reading in matches..."
 
 		self.matches = matchfile.load(out_file, self.hmm, self.targets)
+
+		print "Closing files..."
 
 		out_file.close()
 		hmm_file.close()

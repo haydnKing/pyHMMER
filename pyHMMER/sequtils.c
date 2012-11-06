@@ -389,6 +389,10 @@ seq_type(PyObject *self, PyObject *args)
                 AMINO = 0;
             }
         }
+
+        //If only one has survived
+        if((DNA + RNA + AMINO) == 1)
+            break;
     }
 
     if(DNA)

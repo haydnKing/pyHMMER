@@ -264,9 +264,16 @@ def load(f, hmms, targets):
 			if h.ALPH != hmm_alpha:
 				raise ValueError("Not all HMMS have the same alphabet")
 
+	#get the target alphabets
+	if targets:
+		target_alpha = dict()
+		for t in targets:
+			target_alpha[t.name] = sequtils.seq_type(str(t.seq))
+
 	#do the loading
 	matches = []
 	for line in f:
+		print "Match {}".format(len(matches))
 		#skip comments
 		if line.lstrip()[0] == '#':
 			continue
@@ -309,7 +316,7 @@ def load(f, hmms, targets):
 			match.frame = int(m.group("frame"))
 			match.translation['target'] = 'DNA'
 		if match.target:
-			match.translation['target'] = sequtils.seq_type(str(match.target.seq))
+			match.translation['target'] = target_alpha[match.target.name]
 		if hmm_alpha:
 			match.translation['query'] = hmm_alpha
 
