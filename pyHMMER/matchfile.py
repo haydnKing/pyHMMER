@@ -3,18 +3,6 @@ import re, sequtils
 
 class Match:
 	"""Represents an HMM match"""
-	#Format strings for output
-	fmt = ( 
-		"{:20s} {:20s} {:4d} {:7g} {:7g} {:7g} {:9d} {:9d} {:9d} {:9d} {:9d} {:9d}"
-			+ " {:s}"
-		)
-	hdr = (
-		("{:20s} {:20s} {:4s} {:7s} {:7s} {:7s} {:9s} {:9s} {:9s} {:9s} {:9s} {:9s}"
-			+ " {:s}")
-		.format("Target", "Query", "#", "c-Evalue", "i-Evalue", "Score",
-			"hmm_from", "hmm_to", "ali_from", "ali_to", "env_from", "env_to",
-			"description")
-		)
 	
 	def __init__(self):
 		self.target = None
@@ -113,14 +101,10 @@ class Match:
 		else:
 			return pos
 	
-
-
-
 	def __unicode__(self):
-		return self.fmt.format(self.target.name, self.query.NAME, self.num,
-				self.c_evalue, self.i_evalue, self.score, self.hmm_from, self.hmm_to,
+		return "{{ali: [{}:{}], env: [{}:{}], frame: {}, score: {}}}".format(
 				self.ali_from, self.ali_to, self.env_from, self.env_to, 
-				self.desc)
+				self.frame, self.score)
 
 	def __str__(self):
 		return unicode(self).encode('utf-8')

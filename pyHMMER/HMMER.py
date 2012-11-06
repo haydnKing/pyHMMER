@@ -3,6 +3,7 @@
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 from Bio.Alphabet import DNAAlphabet, ProteinAlphabet, Alphabet
 
 import cStringIO as StringIO
@@ -10,7 +11,7 @@ import hmmfile, tools, tempfile, subprocess, os, re
 from subprocess import Popen, PIPE, STDOUT
 
 import matchfile
-		
+import sequtils	
 
 class hmmsearch:
 	"""Search for an HMM in a database and collect the results"""
@@ -210,17 +211,21 @@ class hmmsearch:
 			except ValueError:
 				pass
 	
-	def chain(self, mingap=0, maxgap=0, minlen=1, excludestop=True):
+	def chain(self, mingap=0, maxgap=0, minlen=1):
 		"""
 			Extract a chain of in-frame matches
 				mingap: minimum gap between matches (0)
 				maxgap: maximum gap between matches (0)
 				minlen: minimum chain length for reporting (1)
-				excludestop: stop chaining if a stop codon is encountered (True)
 		"""
 		l = self._get_by_frame('hmm')
 
 		chains = []
+
+		def add_chain(chain):
+			if len(chain) >= minlen:
+				chains.append([m.match for m in chain])
+
 		#for each target
 		for target in l.itervalues():
 			for frame in target:
@@ -230,26 +235,73 @@ class hmmsearch:
 				chain = [frame[0],]
 				for m in frame[1:]:
 					dist = chain[-1].dist(m)
-					print ("[%d].dist([%d]) = %d" % 
-						(chain[-1].match.num, m.match.num, dist))
 					#add m to the chain if it's within range
-					if dist >= mingap and dist <= maxgap:#and nostops(chainend, mstart)
+					if dist >= mingap and dist <= maxgap:
 						chain.append(m)
 					#or if m is too far away, start a new chain
 					elif dist > maxgap:
 						#add chain to chains if it's long enough
-						if len(chain) >= minlen:
-							chains.append(chain)
+						add_chain(chain)
+						#start a new chain
 						chain = [m,]
 					#ignore matches that are too close
 
+				add_chain(chain)
+
 		return chains
 					
+	def extractProtein(self, chain):
+		"""
+			Extract the sequence of the chain, extending backwards to the start codon
+			and forwards to the stop codon
+			All matches in the chain must have the same target, be in the same 
+			frame and the target must be a DNA alphabet
+		"""
+		if not chain:
+			return Seq('')
 
+		#sort the chain by start point
+		chain.sort(key=lambda m: m.getTargetSpan()[0])
 
-	def extractSequences(self):
-		"""Extract the sequences from the remaining matches from the database"""
-		pass
+		target = chain[0].target
+		frame = chain[0].frame
+		start = chain[0].getTargetSpan()[0]
+		end = chain[-1].getTargetSpan()[1]
+
+		if frame > 0:
+			step = +3
+		elif frame < 0:
+			step = -3
+
+		prot = [start, end]
+		#move back until we find a start codon
+		while True:
+			codon = str(target.seq[prot[0]:prot[0]+step]).upper()
+			if ((frame > 0 and codon == 'ATG') or
+					(frame < 0 and codon == 'CAT')):
+				break
+			prot[0] = prot[0] - step
+			if prot[0] < 0 or prot[0] > len(target.seq):
+				prot[0] = prot[0] + step
+				break
+
+		#move end forward until we meet a stop
+		while True:
+			codon = str(target.seq[prot[1]:prot[1]+step]).upper()
+			if ((frame > 0 and codon in ['TAG', 'TAA', 'TGA',]) or
+					(frame < 0 and codon in ['CTA', 'TTA', 'TCA',])):
+				prot[1] = prot[1] + step
+				break
+			prot[1] = prot[1] + step
+			if prot[1] < 0 or prot[1] > len(target.seq):
+				prot[1] = prot[1] - step
+				break
+
+		ret = target.seq[prot[0]:prot[1]]
+		if frame < 0:
+			return ret.reverse_complement()
+		return ret
+		
 
 	class _minimatch:
 		def __init__(self, m, mode='hmm'):
@@ -304,7 +356,6 @@ class hmmsearch:
 	def __unicode__(self):
 		ret = "Found {:d} matches\n".format(len(self.matches))
 		if self.matches:
-			ret += self.matches[0].hdr + '\n'
 			for m in self.matches:
 				ret += str(m) + '\n'
 		return ret
@@ -313,7 +364,7 @@ class hmmsearch:
 		return unicode(self).encode('utf-8')
 
 	def __repr__(self):
-		return self.__str__()
+		return "[hmmsearch: {:d} matches]".format(len(self.matches))
 
 	def __getitem__(self, i):
 		return self.matches[i]
