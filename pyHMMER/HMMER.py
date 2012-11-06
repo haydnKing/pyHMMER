@@ -209,7 +209,44 @@ class hmmsearch:
 				self.matches.remove(m)
 			except ValueError:
 				pass
-			
+	
+	def chain(self, mingap=0, maxgap=0, minlen=1, excludestop=True):
+		"""
+			Extract a chain of in-frame matches
+				mingap: minimum gap between matches (0)
+				maxgap: maximum gap between matches (0)
+				minlen: minimum chain length for reporting (1)
+				excludestop: stop chaining if a stop codon is encountered (True)
+		"""
+		l = self._get_by_frame('hmm')
+
+		chains = []
+		#for each target
+		for target in l.itervalues():
+			for frame in target:
+				#ignore empty frames
+				if not frame:
+					continue
+				chain = [frame[0],]
+				for m in frame[1:]:
+					dist = chain[-1].dist(m)
+					print ("[%d].dist([%d]) = %d" % 
+						(chain[-1].match.num, m.match.num, dist))
+					#add m to the chain if it's within range
+					if dist >= mingap and dist <= maxgap:#and nostops(chainend, mstart)
+						chain.append(m)
+					#or if m is too far away, start a new chain
+					elif dist > maxgap:
+						#add chain to chains if it's long enough
+						if len(chain) >= minlen:
+							chains.append(chain)
+						chain = [m,]
+					#ignore matches that are too close
+
+		return chains
+					
+
+
 	def extractSequences(self):
 		"""Extract the sequences from the remaining matches from the database"""
 		pass

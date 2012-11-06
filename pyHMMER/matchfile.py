@@ -117,7 +117,7 @@ class Match:
 
 
 	def __unicode__(self):
-		return self.fmt.format(self.target.name, self.query.NAME, self.number,
+		return self.fmt.format(self.target.name, self.query.NAME, self.num,
 				self.c_evalue, self.i_evalue, self.score, self.hmm_from, self.hmm_to,
 				self.ali_from, self.ali_to, self.env_from, self.env_to, 
 				self.desc)
