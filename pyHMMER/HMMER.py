@@ -21,7 +21,7 @@ class hmmsearch:
 		if hmm and targets:
 			self.search(hmm, targets)
 
-	def search(self, hmm, targets):
+	def search(self, hmm, targets, verbose=False):
 		"""Perform the search
 				hmm: a file name or an HMM object which has been loaded from a file
 				targets: the sequences to search - a fasta filename or one or 
@@ -43,7 +43,7 @@ class hmmsearch:
 				self.hmm.append(h)
 
 		#make sure targets is iterable
-		if not hasattr(targets, '__iter__'):
+		if not hasattr(targets, '__iter__') or isinstance(targets, SeqRecord):
 			targets = [targets,]
 		self.targets = list()
 		#load a fasta file if t is not a seqRecord
@@ -53,8 +53,9 @@ class hmmsearch:
 					self.targets.append(req)
 			else:
 				self.targets.append(t)
-
-		print "Loading HMMs and Targets..."
+		
+		if verbose:
+			print "Loading HMMs and Targets..."
 
 		ttargets = []
 		hmm_alpha = self.hmm[0].ALPH.upper()
@@ -83,7 +84,8 @@ class hmmsearch:
 						#probably was a protein after all
 						ttargets.append(t)
 
-		print "Writing Temporary Files"
+		if verbose:
+			print "Writing Temporary Files"
 
 		#write the HMM to a temporary file
 		hmm_file = tempfile.NamedTemporaryFile()
@@ -97,7 +99,8 @@ class hmmsearch:
 		target_file.flush()
 		del ttargets
 
-		print "Calling hmmsearch..."
+		if verbose:
+			print "Calling hmmsearch..."
 
 		p = Popen(['hmmsearch', '--tformat', 'fasta', 
 			'--domtblout', out_file.name, hmm_file.name, target_file.name,], 
@@ -106,11 +109,13 @@ class hmmsearch:
 
 
 		#TODO: Check stdout for errors
-		print "Reading in matches..."
+		if verbose:
+			print "Reading in matches..."
 
 		self.matches = matchfile.load(out_file, self.hmm, self.targets)
 
-		print "Closing files..."
+		if verbose:
+			print "Closing files..."
 
 		out_file.close()
 		hmm_file.close()

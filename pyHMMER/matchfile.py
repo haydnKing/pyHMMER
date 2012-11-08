@@ -273,7 +273,6 @@ def load(f, hmms, targets):
 	#do the loading
 	matches = []
 	for line in f:
-		print "Match {}".format(len(matches))
 		#skip comments
 		if line.lstrip()[0] == '#':
 			continue
