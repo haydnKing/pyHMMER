@@ -102,9 +102,9 @@ class Match:
 			return pos
 	
 	def __unicode__(self):
-		return "{{ali: [{}:{}], env: [{}:{}], frame: {}, score: {}}}".format(
-				self.ali_from, self.ali_to, self.env_from, self.env_to, 
-				self.frame, self.score)
+		(a,b) = self.getTargetSpan()
+		return "{{location: [{}:{}], frame: {}, score: {}}}".format(
+				a,b,self.frame, self.score)
 
 	def __str__(self):
 		return unicode(self).encode('utf-8')

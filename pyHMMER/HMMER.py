@@ -3,8 +3,9 @@
 
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
+from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.Seq import Seq
-from Bio.Alphabet import DNAAlphabet, ProteinAlphabet, Alphabet
+from Bio.Alphabet import DNAAlphabet, ProteinAlphabet, Alphabet, IUPAC
 
 import cStringIO as StringIO
 import hmmfile, tools, tempfile, subprocess, os, re
@@ -263,8 +264,33 @@ class hmmsearch:
 				add_chain(chain)
 
 		return chains
+
+	def getProteins(self, **kwargs):
+		#prepare the arguments
+		chain_args = kwargs.copy()
+		for p in ['max_5_prime', 'max_3_prime']:
+			try:
+				chain_args.pop(p)
+			except KeyError:
+				pass
+		prot_args = kwargs.copy()
+		for p in ['mingap', 'maxgap', 'minlen',]:
+			try:
+				prot_args.pop(p)
+			except KeyError:
+				pass
+		
+
+		chains = self.chain(**chain_args)
+		ret = []
+		for c in chains:
+			p = self.getProtein(c, **prot_args)
+			if p:
+				ret.append(p)
+
+		return ret
 					
-	def extractProtein(self, chain):
+	def getProtein(self, chain, max_5_prime=None, max_3_prime=None):
 		"""
 			Extract the sequence of the chain, extending backwards to the start codon
 			and forwards to the stop codon
@@ -275,24 +301,32 @@ class hmmsearch:
 			return Seq('')
 
 		#sort the chain by start point
-		chain.sort(key=lambda m: m.getTargetSpan()[0])
+		chain.sort(key=lambda m: m.getFrameSpan('hmm')[0])
 
 		target = chain[0].target
+		query = chain[0].query
 		frame = chain[0].frame
 		start = chain[0].getTargetSpan()[0]
 		end = chain[-1].getTargetSpan()[1]
 
+		if frame == 0:
+			frame = 1
 		if frame > 0:
 			step = +3
+			fwd = +1
 		elif frame < 0:
 			step = -3
+			fwd = -1
 
 		prot = [start, end]
 		#move back until we find a start codon
 		while True:
-			codon = str(target.seq[prot[0]:prot[0]+step]).upper()
-			if ((frame > 0 and codon == 'ATG') or
-					(frame < 0 and codon == 'CAT')):
+			if frame > 0:
+				codon = str(target.seq[prot[0]:prot[0]+step]).upper()
+			else:
+				codon = str(
+						target.seq[prot[0]+step:prot[0]].reverse_complement()).upper()
+			if codon == 'ATG':
 				break
 			prot[0] = prot[0] - step
 			if prot[0] < 0 or prot[0] > len(target.seq):
@@ -301,9 +335,12 @@ class hmmsearch:
 
 		#move end forward until we meet a stop
 		while True:
-			codon = str(target.seq[prot[1]:prot[1]+step]).upper()
-			if ((frame > 0 and codon in ['TAG', 'TAA', 'TGA',]) or
-					(frame < 0 and codon in ['CTA', 'TTA', 'TCA',])):
+			if frame > 0:
+				codon = str(target.seq[prot[1]:prot[1]+step]).upper()
+			else:
+				codon = str(
+						target.seq[prot[1]+step:prot[1]].reverse_complement()).upper()
+			if codon in ['TAG', 'TAA', 'TGA',]:
 				prot[1] = prot[1] + step
 				break
 			prot[1] = prot[1] + step
@@ -311,11 +348,39 @@ class hmmsearch:
 				prot[1] = prot[1] - step
 				break
 
-		ret = target.seq[prot[0]:prot[1]]
+		#check if the 5' and 3' ends are within the limits
+		if max_5_prime and max_5_prime < abs(start - prot[0]):
+			return None
+		if max_3_prime and max_3_prime < abs(end - prot[1]):
+			return None
+
 		if frame < 0:
-			return ret.reverse_complement()
-		return ret
-		
+			seq = target.seq[prot[1]:prot[0]].reverse_complement()
+		else:
+			seq = target.seq[prot[0]:prot[1]]
+
+		seq_type = sequtils.seq_type(str(seq))
+		if seq_type == 'DNA':
+			seq.alphabet = IUPAC.ambiguous_dna
+		elif seq_type == 'RNA':
+			seq.alphabet = IUPAC.ambiguous_rna
+		elif seq_type == 'AMINO':
+			seq.alphabet = IUPAC.protein
+
+		#Create the features
+		feats = []
+		for m in chain:
+			span = m.getTargetSpan()
+			strand = 1
+			if m.frame < 0:
+				strand = -1
+			feat = SeqFeature(FeatureLocation(span[0]-prot[0], span[1]-prot[0],
+				strand=strand), type="{} domain".format(m.query.NAME))
+			feats.append(feat)
+
+		return SeqRecord(seq, name=query.NAME, 
+				description="{} containing protein".format(query.NAME), 
+				features=feats)
 
 	class _minimatch:
 		def __init__(self, m, mode='hmm'):
