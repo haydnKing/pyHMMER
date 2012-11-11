@@ -268,7 +268,7 @@ class hmmsearch:
 	def getProteins(self, **kwargs):
 		#prepare the arguments
 		chain_args = kwargs.copy()
-		for p in ['max_5_prime', 'max_3_prime']:
+		for p in ['max_5_prime', 'max_3_prime', 'mode']:
 			try:
 				chain_args.pop(p)
 			except KeyError:
@@ -290,7 +290,7 @@ class hmmsearch:
 
 		return ret
 					
-	def getProtein(self, chain, max_5_prime=None, max_3_prime=None):
+	def getProtein(self, chain, mode='hmm', max_5_prime=None, max_3_prime=None):
 		"""
 			Extract the sequence of the chain, extending backwards to the start codon
 			and forwards to the stop codon
@@ -301,13 +301,13 @@ class hmmsearch:
 			return Seq('')
 
 		#sort the chain by start point
-		chain.sort(key=lambda m: m.getFrameSpan('hmm')[0])
+		chain.sort(key=lambda m: m.getFrameSpan(mode)[0])
 
 		target = chain[0].target
 		query = chain[0].query
 		frame = chain[0].frame
-		start = chain[0].getTargetSpan()[0]
-		end = chain[-1].getTargetSpan()[1]
+		start = chain[0].getTargetSpan(mode)[0]
+		end = chain[-1].getTargetSpan(mode)[1]
 
 		if frame == 0:
 			frame = 1
@@ -370,7 +370,7 @@ class hmmsearch:
 		#Create the features
 		feats = []
 		for m in chain:
-			span = m.getTargetSpan()
+			span = m.getTargetSpan(mode)
 			strand = 1
 			if m.frame < 0:
 				strand = -1
