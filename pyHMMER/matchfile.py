@@ -287,7 +287,7 @@ def load(f, hmms, targets):
 		#attempt to set target
 		name = l[0]
 		for t in targets:
-			if t.name == name:
+			if t.name == name or t.id == name:
 				match.target = t
 				break
 		#query

@@ -50,6 +50,8 @@ class hmmsearch:
 		#load a fasta file if t is not a seqRecord
 		for t in targets:
 			if not isinstance(t, SeqRecord):
+				for req in SeqIO.parse(t, 'genbank'):
+					self.targets.append(req)
 				for req in SeqIO.parse(t, 'fasta'):
 					self.targets.append(req)
 			else:
@@ -265,6 +267,17 @@ class hmmsearch:
 
 		return chains
 
+	def getAnnotated(self, mode='hmm', target=None):
+		"""Annotate the seqRecord given by target, defaulting to the first
+			target given if target is None"""
+		target = target or self.targets[0]
+
+		for match in self.matches:
+			if match.target == target:
+				target.features.append(self._match2SeqFeature(match, mode=mode))
+
+		return target
+
 	def getProteins(self, **kwargs):
 		#prepare the arguments
 		chain_args = kwargs.copy()
@@ -370,17 +383,20 @@ class hmmsearch:
 		#Create the features
 		feats = []
 		for m in chain:
-			span = m.getTargetSpan(mode)
-			strand = 1
-			if m.frame < 0:
-				strand = -1
-			feat = SeqFeature(FeatureLocation(span[0]-prot[0], span[1]-prot[0],
-				strand=strand), type="{} domain".format(m.query.NAME))
-			feats.append(feat)
-
+			feats.append(self._match2SeqFeature(m, mode=mode, offset=prot[0]))
+			
 		return SeqRecord(seq, name=query.NAME, 
 				description="{} containing protein".format(query.NAME), 
 				features=feats)
+
+	def _match2SeqFeature(self, match, mode='hmm', offset=0):
+		span = sorted(match.getTargetSpan(mode))
+		if match.frame >= 0:
+			strand = 1
+		elif match.frame < 0:
+			strand = -1
+		return SeqFeature(FeatureLocation(span[0]-offset, span[1]-offset,
+			strand=strand), type="{} domain".format(match.query.NAME))
 
 	class _minimatch:
 		def __init__(self, m, mode='hmm'):
