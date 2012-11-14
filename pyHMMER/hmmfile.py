@@ -1,6 +1,6 @@
 """Read and Write HMMER's .hmm format"""
 
-import re, itertools, collections
+import re, itertools, collections, math
 
 class HMMFileException(Exception):
 	def __init__(self, errors, warnings):
@@ -489,8 +489,8 @@ class State:
 
 class HMM:
 	"""A Hidden Markov Model"""
-	def __init__(self):
-		self.NAME = ''
+	def __init__(self, name='', alphabet=None):
+		self.NAME = name
 		self.LENG = 0
 
 		self.states = []
@@ -499,5 +499,108 @@ class HMM:
 		#assume these to be false if not present
 		self.RM = self.CS = self.MAP = False
 		self.K = 0
-		
 
+	def addBegin(transition = None, insert_emission = None):
+		"""Add a begin node to the model"""
+		state = State()
+		if transition:
+			if len(transition) != 5:
+				raise ValueError('5 transision probabilities required for Begin	state')
+			transition = transition + [1.0, 0.0,]
+		else:
+			transition = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,]
+
+		self.addState(transision=transision, emission=None, 
+				insert_emission=insert_emission, num=0)
+
+	def addEnd(transition = None, emission = None, insert_emission = None,
+							MAP=-1, CS='-', RF='-'):
+		"""Add an final node to the model"""
+		
+		if transision:
+			if len(transision) == 7:
+				transition[2] = 0 //M(k)->D(k+1)
+				transition[6] = 0 //D(k)->D(k+1)
+				transision[5] = 1.0
+
+		self.addState(transition=transision, emission=emission,
+				insert_emission=insert_emission, num=-1, MAP=MAP, CS=CS, RF=RF)
+	
+	def addState(transition = None, emission = None, insert_emission = None,
+								num=-1, MAP=-1, CS='-', RF='-'):
+		"""Add a new state with the properties specified
+			
+			transtision: the transition probabilities in the order
+				[M(k)->M(k+1), M(k)->I(k), M(k)->D(k+1), I(k)->M(k+1), I(k)->I(k+1),
+					D(k)->M(k+1), D(k)->D(k+1)]
+			
+			emission: dictionary containing the match emission probabilities for each
+				symbol in the alphabet
+			
+			insert_emission: dictionary containing the insert emission probabilities 
+				for each symbol in the alphabet
+
+			num: position within the set of nodes, defaults to the end if less than
+				zero, raises ValueError if greater than the number of states
+
+			MAP: MAP annotation for this node, integet
+
+			RF: Reference Annotation for this node, char
+
+			CS: Consensus Structure annotation for this node
+		"""
+
+		if num < 0:
+			num = len(self.states)
+		elif num > len(self.states):
+			raise IndexError('num is greater than the number of states ({} > {})'
+					.format(num, len(self.states)))
+		
+		if not transition:
+			transition = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,]
+		if len(transision) != 7:
+			raise ValueError('7 transision probabilities required, recieved {}'
+					.format(len(transision)))
+		
+		if emission:
+			if len(emission) != len(self.ALPHA):
+				raise ValueError('{} emission probabilities needed'
+						.format(len(self.alpha))
+			if sum(emission.iteritems()) != 1.0:
+				raise ValueError('emission probabilities do not sum to 1 ({})'
+					.format(sum(emission.iteritems())))
+
+		if insert_emission:
+			if len(insert_emission) != len(self.ALPHA):
+				raise ValueError('{} insert_emission probabilities needed'
+						.format(len(self.alpha))
+			if sum(insert_emission.iteritems()) != 1.0:
+				raise ValueError('insert_emission probabilities do not sum to 1 ({})'
+					.format(sum(insert_emission.iteritems())))
+
+		state = State()
+		state.num = num
+		state.MAP = MAP
+		state.RF  = RF
+		state.CS  = CS
+
+		state.transition = [-math.log(x) for x in transition]
+		if emission:
+			state.emission = [-math.log(emission[x]) for x in
+				sorted(emission.iterkeys())]
+		else:
+			state.emission = [_get_log_prob(1 / len(self.ALPHA),] * len(self.ALPHA)
+
+		if insert_emission:
+			state.insert_emission = [_get_log_prob(insert_emission[x]) for x in
+				sorted(insert_emission.iterkeys())]
+		else:
+			state.insert_emission = [_get_log_prob(1 / len(self.ALPHA),] * len(self.ALPHA)
+		
+		self.states.insert(num, state)
+		self.LENG = len(self.states) -1
+
+def _get_log_prob(p):
+	if p <= 0:
+		return '*'
+	return -math.log(p)
