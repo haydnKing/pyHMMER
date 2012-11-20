@@ -519,8 +519,8 @@ class HMM:
 		
 		if transision:
 			if len(transision) == 7:
-				transition[2] = 0 //M(k)->D(k+1)
-				transition[6] = 0 //D(k)->D(k+1)
+				transition[2] = 0 #M(k)->D(k+1)
+				transition[6] = 0 #D(k)->D(k+1)
 				transision[5] = 1.0
 
 		self.addState(transition=transision, emission=emission,
@@ -565,7 +565,7 @@ class HMM:
 		if emission:
 			if len(emission) != len(self.ALPHA):
 				raise ValueError('{} emission probabilities needed'
-						.format(len(self.alpha))
+						.format(len(self.alpha)))
 			if sum(emission.iteritems()) != 1.0:
 				raise ValueError('emission probabilities do not sum to 1 ({})'
 					.format(sum(emission.iteritems())))
@@ -573,7 +573,7 @@ class HMM:
 		if insert_emission:
 			if len(insert_emission) != len(self.ALPHA):
 				raise ValueError('{} insert_emission probabilities needed'
-						.format(len(self.alpha))
+						.format(len(self.alpha)))
 			if sum(insert_emission.iteritems()) != 1.0:
 				raise ValueError('insert_emission probabilities do not sum to 1 ({})'
 					.format(sum(insert_emission.iteritems())))
@@ -589,13 +589,13 @@ class HMM:
 			state.emission = [-math.log(emission[x]) for x in
 				sorted(emission.iterkeys())]
 		else:
-			state.emission = [_get_log_prob(1 / len(self.ALPHA),] * len(self.ALPHA)
+			state.emission = [_get_log_prob(1 / len(self.ALPHA)),] * len(self.ALPHA)
 
 		if insert_emission:
 			state.insert_emission = [_get_log_prob(insert_emission[x]) for x in
 				sorted(insert_emission.iterkeys())]
 		else:
-			state.insert_emission = [_get_log_prob(1 / len(self.ALPHA),] * len(self.ALPHA)
+			state.insert_emission = [_get_log_prob(1 / len(self.ALPHA)),] * len(self.ALPHA)
 		
 		self.states.insert(num, state)
 		self.LENG = len(self.states) -1
