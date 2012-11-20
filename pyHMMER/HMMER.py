@@ -124,6 +124,10 @@ class hmmsearch:
 		hmm_file.close()
 		target_file.close()
 
+		if verbose:
+			print "Found {} matches in {} targets".format(len(self.matches), 
+					len(self.targets))
+
 	def mindist(self, dist=0, mode='hmm', verb=False):
 		"""
 			Filter the results so that each match has at least dist symbols
@@ -265,6 +269,8 @@ class hmmsearch:
 
 				add_chain(chain)
 
+		print "Found {} chains".format(len(chains))
+
 		return chains
 
 	def getAnnotated(self, mode='hmm', target=None):
@@ -301,6 +307,7 @@ class hmmsearch:
 			if p:
 				ret.append(p)
 
+		print "Found {} proteins".format(len(p))
 		return ret
 					
 	def getProtein(self, chain, mode='hmm', max_5_prime=None, max_3_prime=None):
