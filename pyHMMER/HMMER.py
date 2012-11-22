@@ -17,10 +17,10 @@ import sequtils
 class hmmsearch:
 	"""Search for an HMM in a database and collect the results"""
 
-	def __init__(self, hmm = None, targets = None):
+	def __init__(self, hmm = None, targets = None, **kwargs):
 		"""Initialise - search if hmm and targets have been provided"""
 		if hmm and targets:
-			self.search(hmm, targets)
+			self.search(hmm, targets, **kwargs)
 
 	def search(self, hmm, targets, verbose=False):
 		"""Perform the search
@@ -273,9 +273,8 @@ class hmmsearch:
 
 		return chains
 
-	def getAnnotated(self, mode='hmm', target=None):
-		"""Annotate the seqRecord given by target, defaulting to the first
-			target given if target is None"""
+	def annotate(self, target, mode='hmm'):
+		"""Annotate the seqRecord given by target"""
 		target = target or self.targets[0]
 
 		for match in self.matches:
@@ -307,7 +306,7 @@ class hmmsearch:
 			if p:
 				ret.append(p)
 
-		print "Found {} proteins".format(len(p))
+		print "Found {} proteins".format(len(ret))
 		return ret
 					
 	def getProtein(self, chain, mode='hmm', max_5_prime=None, max_3_prime=None):

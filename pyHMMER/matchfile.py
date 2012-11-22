@@ -276,7 +276,7 @@ def load(f, hmms, targets):
 		#skip comments
 		if line.lstrip()[0] == '#':
 			continue
-
+		
 		#skip lines which aren't long enough
 		l = line.split()
 		if len(l) < len(format_list):
@@ -287,7 +287,7 @@ def load(f, hmms, targets):
 		#attempt to set target
 		name = l[0]
 		for t in targets:
-			if t.name == name or t.id == name:
+			if t.name.split()[0] == name or t.id.split()[0] == name:
 				match.target = t
 				break
 		#query
