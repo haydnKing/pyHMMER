@@ -242,14 +242,12 @@ def save(matches, f):
 		f.close()
 
 
-def load(f, hmms, targets):
+def load(f, hmms, target_ids):
 	"""Load the results of the search stored in f (filename or file object)
 		which was conducted by searching hmms against targets"""
 	#make sure the arguments are iterable
 	if not hasattr(hmms, "__iter__"):
 		hmms = [hmms,]
-	if not hasattr(targets, "__iter__"):
-		targets = [targets,]
 
 	#should I close the file object?
 	should_close = False
@@ -265,10 +263,10 @@ def load(f, hmms, targets):
 				raise ValueError("Not all HMMS have the same alphabet")
 
 	#get the target alphabets
-	if targets:
+	if target_ids:
 		target_alpha = dict()
-		for t in targets:
-			target_alpha[t.name] = sequtils.seq_type(str(t.seq))
+		for t in target_ids:
+			target_alpha[t[1].name] = sequtils.seq_type(str(t[1].seq))
 
 	#do the loading
 	matches = []
@@ -286,10 +284,8 @@ def load(f, hmms, targets):
 
 		#attempt to set target
 		name = l[0]
-		for t in targets:
-			if t.name.split()[0] == name or t.id.split()[0] == name:
-				match.target = t
-				break
+		match.target = target_ids[int(name)][1]
+			
 		#query
 		for q in hmms:
 			if q.NAME == l[3]:

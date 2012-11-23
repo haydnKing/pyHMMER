@@ -3,7 +3,7 @@ from Bio import SeqIO
 import unittest, tempfile, re
 
 test_data = {
-	't_name': ['gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|','gi|157931526|gb|ABW04887.1|',],
+	't_name': ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0',],
 	't_accession': ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-',], 
 	't_len': [687,687,687,687,687,687,687,687,687,687,687,687,687,687,687,687,687,],
 	'q_name': ['PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1',],
@@ -27,7 +27,6 @@ test_data = {
 	'env_from': [60,108,143,178,213,249,284,319,354,389,424,459,505,540,575,610,645,		], 
 	'env_to': [71,140,176,211,246,282,317,352,387,422,457,492,538,573,608,643,678,		],
 	'acc': [0.92,0.84,0.98,0.97,0.97,0.95,0.98,0.96,0.92,0.98,0.97,0.96,0.97,0.98,0.95,0.97,0.68,		], 
-	'desc': ['PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]','PPR [Raphanus sativus]',],
 }
 
 hmm_seq = "SCEAGFGGESLKLQSGFHEIKGLEDAIDLFSDML"
@@ -50,7 +49,7 @@ class TestMatchRead(unittest.TestCase):
 
 	targets = list()
 	for r in SeqIO.parse('tests/data/matchtarget.fasta', 'fasta'):
-		targets.append(r)
+		targets.append((r.id,r,))
 	
 	matches = matchfile.load('tests/data/matchfile', hmms, targets)
 

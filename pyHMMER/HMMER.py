@@ -60,6 +60,12 @@ class hmmsearch:
 		if verbose:
 			print "Loading HMMs and Targets..."
 
+		#apply unique ids to the targets
+		target_ids = []
+		for i,t in enumerate(self.targets):
+			target_ids.append((t.id, t))
+			t.id = str(i)
+
 		ttargets = []
 		hmm_alpha = self.hmm[0].ALPH.upper()
 		for h in self.hmm:
@@ -115,7 +121,11 @@ class hmmsearch:
 		if verbose:
 			print "Reading in matches..."
 
-		self.matches = matchfile.load(out_file, self.hmm, self.targets)
+		self.matches = matchfile.load(out_file, self.hmm, target_ids)
+
+		#put ids back the way they were
+		for t in target_ids:
+			t[1].id = t[0]
 
 		if verbose:
 			print "Closing files..."
