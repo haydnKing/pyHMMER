@@ -385,8 +385,10 @@ class hmmsearch:
 
 		if frame < 0:
 			seq = target.seq[prot[1]:prot[0]].reverse_complement()
+			s_loc = FeatureLocation(prot[0], prot[1], strand=-1)
 		else:
 			seq = target.seq[prot[0]:prot[1]]
+			s_loc = FeatureLocation(prot[0], prot[1], strand=1)
 
 		seq_type = sequtils.seq_type(str(seq))
 		if seq_type == 'DNA':
@@ -403,7 +405,9 @@ class hmmsearch:
 			
 		return SeqRecord(seq, name=query.NAME, 
 				description="{} containing protein".format(query.NAME), 
-				features=feats)
+				features=feats,
+				annotations={'source': target,
+										 'sourceloc': s_loc,})
 
 	def _match2SeqFeature(self, match, mode='hmm', offset=0):
 		span = sorted(match.getTargetSpan(mode))
