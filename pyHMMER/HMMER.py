@@ -289,7 +289,7 @@ class hmmsearch:
 
 		for match in self.matches:
 			if match.target == target:
-				target.features.append(self._match2SeqFeature(match, mode=mode))
+				target.features.append(match.asSeqFeature(mode=mode))
 
 		return target
 
@@ -401,7 +401,7 @@ class hmmsearch:
 		#Create the features
 		feats = []
 		for m in chain:
-			feats.append(self._match2SeqFeature(m, mode=mode, offset=prot[0]))
+			feats.append(m.asSeqFeature(mode=mode, offset=prot[0]))
 			
 		return SeqRecord(seq, name=query.NAME, 
 				description="{} containing protein".format(query.NAME), 
@@ -409,14 +409,7 @@ class hmmsearch:
 				annotations={'source': target,
 										 'sourceloc': s_loc,})
 
-	def _match2SeqFeature(self, match, mode='hmm', offset=0):
-		span = sorted(match.getTargetSpan(mode))
-		if match.frame >= 0:
-			strand = 1
-		elif match.frame < 0:
-			strand = -1
-		return SeqFeature(FeatureLocation(span[0]-offset, span[1]-offset,
-			strand=strand), type="{} domain".format(match.query.NAME))
+
 
 	class _minimatch:
 		def __init__(self, m, mode='hmm'):

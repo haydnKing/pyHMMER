@@ -1,5 +1,6 @@
 """Read and Write HMMER's match format"""
 import re, sequtils
+from Bio.SeqFeature import SeqFeature
 
 class Match:
 	"""Represents an HMM match"""
@@ -79,6 +80,15 @@ class Match:
 			return self.target.seq[span[1]:span[0]].reverse_complement()
 		return self.target.seq[span[0]:span[1]]
 
+	def asSeqFeature(self, mode='hmm', offset=0):
+		span = sorted(self.getTargetSpan(mode))
+		if self.frame >= 0:
+			strand = 1
+		elif self.frame < 0:
+			strand = -1
+		return SeqFeature(FeatureLocation(span[0]-offset, span[1]-offset,
+			strand=strand), type="{} domain".format(self.query.NAME))
+	
 	def _map_position(self, pos):
 		"""Map the position given onto the target"""
 		if self.isTranslation():
