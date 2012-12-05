@@ -1,6 +1,6 @@
 """Read and Write HMMER's match format"""
 import re, sequtils
-from Bio.SeqFeature import SeqFeature
+from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 class Match:
 	"""Represents an HMM match"""
@@ -88,6 +88,13 @@ class Match:
 			strand = -1
 		return SeqFeature(FeatureLocation(span[0]-offset, span[1]-offset,
 			strand=strand), type="{} domain".format(self.query.NAME))
+	
+	def withinTarget(self):
+		"""return true if the hmm position is within the target sequence"""
+		(a,b) = self.getTargetSpan()
+		if a < 0 or b > len(self.getTarget()):
+			return False
+		return True
 	
 	def _map_position(self, pos):
 		"""Map the position given onto the target"""
