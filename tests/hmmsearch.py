@@ -1,4 +1,4 @@
-from pyHMMER import hmmfile, matchfile, sequtils
+from pyHMMER import hmmfile, matchfile, sequtils, HMMER
 from Bio import SeqIO
 import unittest, tempfile, re
 
@@ -6,7 +6,7 @@ test_data = {
 	't_name': ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0',],
 	't_accession': ['-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-','-',], 
 	't_len': [687,687,687,687,687,687,687,687,687,687,687,687,687,687,687,687,687,],
-	'q_name': ['PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1','PPR_1',],
+	'q_name': ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0',],
 	'q_accession': ['PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2','PF12854.2',], 
 	'q_len': [34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,], 
 	'f_evalue': [4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,4.2e-183,], 
@@ -49,7 +49,10 @@ class TestMatchRead(unittest.TestCase):
 
 	targets = list()
 	for r in SeqIO.parse('tests/data/matchtarget.fasta', 'fasta'):
-		targets.append((r.id,r,))
+		targets.append(r)
+
+	targets = HMMER.wrap_seqrecord(targets)
+	hmms  = HMMER.wrap_hmm(hmms)
 	
 	matches = matchfile.load('tests/data/matchfile', hmms, targets)
 

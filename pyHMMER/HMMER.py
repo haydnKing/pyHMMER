@@ -14,6 +14,25 @@ from subprocess import Popen, PIPE, STDOUT
 import matchfile
 import sequtils	
 
+class wrap(object):
+	"""A class which wraps anothe class, overriding specific values"""
+	def __init__(self, wrapped, overrides):
+		self.wrapped = wrapped
+		self.overrides = overrides
+
+	def __getattr__(self, item):
+		if self.overrides.has_key(item):
+			return self.overrides[item]
+		return getattr(self.wrapped, item)
+
+def wrap_seqrecord(records):
+	return [wrap(r, {'id': str(i), 'alpha': sequtils.seq_type(str(r.seq))}) 
+				for i,r in enumerate(records)]
+
+def wrap_hmm(hmms):
+	return [wrap(h, {'NAME': str(i), 'alpha': h.ALPH.upper(),}) 
+					for i,h in enumerate(hmms)]
+
 class jackhmmer:
 	"""Iteratively seach a protein database with a protein sequence
 
@@ -146,38 +165,35 @@ class hmmsearch:
 		if verbose:
 			print "Loading HMMs and Targets..."
 
-		#apply unique ids to the targets
-		target_ids = []
-		for i,t in enumerate(self.targets):
-			target_ids.append((t.id, t))
-			t.id = str(i)
+		#apply unique ids
+		self.targets = wrap_seqrecord(self.targets) 
+		self.hmm = wrap_hmm(self.hmm)
 
 		ttargets = []
 		hmm_alpha = self.hmm[0].ALPH.upper()
 		for h in self.hmm:
 			if h.ALPH.upper() != hmm_alpha:
 				raise ValueError("The HMMs don't all have the same alphabet")
+
 		#Translate targets if necessary
 		for t in self.targets:
-			if hmm_alpha == "DNA":
-				if (isinstance(t.seq.alphabet, DNAAlphabet) or 
-						isinstance(t.seq.alphabet, Alphabet)):
+			t_alpha = sequtils.seq_type(str(t.seq))
+			
+			#if target and hmms have same alphabet
+			if hmm_alpha == t_alpha:
 					ttargets.append(t)
-				else:
-					raise ValueError("No translation available for %s to %s" % 
-							(hmm_alpha, t.seq.alphabet))
-			elif hmm_alpha == "RNA":
-				raise ValueError("RNA HMMs are not supported")
-			elif hmm_alpha == "AMINO":
-				if isinstance(t.seq.alphabet, ProteinAlphabet):
-					ttargets.append(t)
-				else:
+			#else try translating
+			else:
+				if hmm_alpha == "AMINO" and t_alpha == "DNA":
 					try:
 						#looks like we might have to convert
 						ttargets = ttargets + tools.getSixFrameTranslation(t)
 					except ValueError:
 						#probably was a protein after all
 						ttargets.append(t)
+				else:
+					raise ValueError('Unknown Translation \'{}\' to \'{}\''
+							.format(t_alpha, hmm_alpha))
 
 		if verbose:
 			print "Writing Temporary Files"
@@ -207,11 +223,7 @@ class hmmsearch:
 		if verbose:
 			print "Reading in matches..."
 
-		self.matches = matchfile.load(out_file, self.hmm, target_ids)
-
-		#put ids back the way they were
-		for t in target_ids:
-			t[1].id = t[0]
+		self.matches = matchfile.load(out_file, self.hmm, self.targets)
 
 		if verbose:
 			print "Closing files..."

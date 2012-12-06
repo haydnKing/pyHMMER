@@ -261,31 +261,15 @@ def save(matches, f):
 		f.close()
 
 
-def load(f, hmms, target_ids):
+def load(f, queries, targets):
 	"""Load the results of the search stored in f (filename or file object)
 		which was conducted by searching hmms against targets"""
-	#make sure the arguments are iterable
-	if not hasattr(hmms, "__iter__"):
-		hmms = [hmms,]
 
 	#should I close the file object?
 	should_close = False
 	if isinstance(f, basestring):
 		f = open(f, 'r')
 		should_close = True
-
-	#get the HMM alphabet
-	if hmms:
-		hmm_alpha = hmms[0].ALPH
-		for h in hmms:
-			if h.ALPH != hmm_alpha:
-				raise ValueError("Not all HMMS have the same alphabet")
-
-	#get the target alphabets
-	if target_ids:
-		target_alpha = dict()
-		for t in target_ids:
-			target_alpha[t[1].name] = sequtils.seq_type(str(t[1].seq))
 
 	#do the loading
 	matches = []
@@ -303,13 +287,13 @@ def load(f, hmms, target_ids):
 
 		#attempt to set target
 		name = l[0]
-		match.target = target_ids[int(name)][1]
-			
-		#query
-		for q in hmms:
-			if q.NAME == l[3]:
-				match.query = q
-				break
+		match.target = targets[int(name)].wrapped
+		match.translation['target'] = targets[int(name)].alpha
+
+		#set the query
+		qname = l[3]
+		match.query = queries[int(qname)].wrapped
+		match.translation['query'] = queries[int(qname)].alpha
 
 		for i,fmt in enumerate(format_list[0:-1]):
 			v = l[i]
@@ -328,11 +312,6 @@ def load(f, hmms, target_ids):
 		m = re.search(r"frame:\s(?P<frame>[+-]?\d)", match.desc)
 		if m:
 			match.frame = int(m.group("frame"))
-			match.translation['target'] = 'DNA'
-		if match.target:
-			match.translation['target'] = target_alpha[match.target.name]
-		if hmm_alpha:
-			match.translation['query'] = hmm_alpha
 
 		matches.append(match)
 
