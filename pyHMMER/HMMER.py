@@ -14,6 +14,92 @@ from subprocess import Popen, PIPE, STDOUT
 import matchfile
 import sequtils	
 
+class jackhmmer:
+	"""Iteratively seach a protein database with a protein sequence
+
+	Attributes:
+		- matches: matches found by jackhmmer (matchfile.Match)
+	"""
+
+	SWITCHES = ['max', 'nobias', 'fast', 'hand','wpb','wgsc','wblosum','wnone',
+			'eent', 'enone','mpi']
+	ARGS = ['popen', 'pextend', 'mxfile', 'E', 'T', 'Z', 'domE', 'domT', 'domZ',
+			'incE', 'incT', 'incdomE', 'incdomT', 'F1', 'F2', 'F3', 'symfrac',
+			'fragthresh','wid','eset','ere','esigma','eid','EmL','EmN','EvL','EvN',
+			'EfL','EfM','Eft','seed','cpu']
+
+	def __init__(self, seq, seqdb, **kwargs):
+		"""
+			seq: the sequence to search with
+				a single or a list of SeqRecords
+
+			seqdb: the sequence database to search
+				a single or a list of SeqRecords
+
+			keyword arguments: other arguments to jackhmmer - see HMMER docs
+		"""
+		#turn everything into lists
+		if isinstance(seq, SeqRecord):
+			seq = [seq,]
+		if isinstance(seqdb, SeqRecord):
+			seqdb = [seq,]
+
+		args = []
+		for k,v in kwargs.iteritems():
+			if k in self.ARGS:
+				args += ["--{}".format(k), v]
+			elif k in self.SWITCHES:
+				args += ['--{}'.format(k)]
+			else:
+				raise ValueError("Unknown jackhmmer argument \'{}\'".format(k))
+
+		#apply unique ids to the targets
+		target_ids = []
+		for i,t in enumerate(seqdb):
+			target_ids.append((t.id, t))
+			t.id = str(i)
+
+		seq_file = tempfile.NamedTemporaryFile()
+		seqdb_file = tempfile.NamedTemporaryFile()
+		out_file = tempfile.NamedTemporaryFile()
+
+		SeqIO.write(seq, seq_file, 'fasta')
+		SeqIO.write(seqdb, seqdb_file, 'fasta')
+		seq_file.flush()
+		seqdb_file.flush()
+
+		p = Popen(['jackhmmer', '--qformat', 'fasta', '--tformat', 'fasta', 
+			'--domtblout', out_file.name,] + args + [seq_file.name, seqdb_file.name,], 
+				stdout=PIPE, stdin=PIPE, stderr=PIPE)
+		out = p.communicate()
+
+		self.matches = matchfile.load(out_file, seq, target_ids)
+
+		#put ids back the way they were
+		for t in target_ids:
+			t[1].id = t[0]
+
+		if verbose:
+			print "Closing files..."
+
+		out_file.close()
+		hmm_file.close()
+		target_file.close()
+
+	def annotate(mode='hmm', type=None):
+		"""Annotate the target seqdbs with the discovered features
+
+			- mode: the size of the feature
+							'hmm': the entire HMM
+							'ali': alignment values
+							'env': environment values
+
+			- type: type to apply to the SeqFeatures, defaults to name of query seq
+		"""
+		for m in self.matches:
+			m.getTarget().features.append(m.asSeqFeature(mode=mode,type=type))
+
+
 class hmmsearch:
 	"""Search for an HMM in a database and collect the results"""
 

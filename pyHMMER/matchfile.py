@@ -80,14 +80,16 @@ class Match:
 			return self.target.seq[span[1]:span[0]].reverse_complement()
 		return self.target.seq[span[0]:span[1]]
 
-	def asSeqFeature(self, mode='hmm', offset=0):
+	def asSeqFeature(self, mode='hmm', offset=0, type=None):
 		span = sorted(self.getTargetSpan(mode))
 		if self.frame >= 0:
 			strand = 1
 		elif self.frame < 0:
 			strand = -1
+		if not type:
+			type = self.query.NAME
 		return SeqFeature(FeatureLocation(span[0]-offset, span[1]-offset,
-			strand=strand), type="{} domain".format(self.query.NAME))
+			strand=strand), type="{}".format(type))
 	
 	def withinTarget(self):
 		"""return true if the hmm position is within the target sequence"""
