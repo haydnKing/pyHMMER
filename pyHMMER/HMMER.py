@@ -73,10 +73,8 @@ class jackhmmer:
 				raise ValueError("Unknown jackhmmer argument \'{}\'".format(k))
 
 		#apply unique ids to the targets
-		target_ids = []
-		for i,t in enumerate(seqdb):
-			target_ids.append((t.id, t))
-			t.id = str(i)
+		self.seq = wrap_seqrecord(seq)
+		self.seqdb=wrap_seqrecord(seqdb)
 
 		seq_file = tempfile.NamedTemporaryFile()
 		seqdb_file = tempfile.NamedTemporaryFile()
@@ -92,11 +90,7 @@ class jackhmmer:
 				stdout=PIPE, stdin=PIPE, stderr=PIPE)
 		out = p.communicate()
 
-		self.matches = matchfile.load(out_file, seq, target_ids)
-
-		#put ids back the way they were
-		for t in target_ids:
-			t[1].id = t[0]
+		self.matches = matchfile.load(out_file, self.seq, self.seqdb)
 
 		if verbose:
 			print "Closing files..."
