@@ -489,6 +489,8 @@ class State:
 
 class HMM:
 	"""A Hidden Markov Model"""
+	_trorder = ['MM','MI','MD','IM','II','DM','DD']
+
 	def __init__(self, name='', alphabet=None):
 		self.NAME = name
 		self.LENG = 0
@@ -499,108 +501,161 @@ class HMM:
 		#assume these to be false if not present
 		self.RM = self.CS = self.MAP = False
 		self.K = 0
+		self.alpha = alphabet
 
-	def addBegin(transition = None, insert_emission = None):
-		"""Add a begin node to the model"""
-		state = State()
-		if transition:
-			if len(transition) != 5:
-				raise ValueError('5 transision probabilities required for Begin	state')
-			transition = transition + [1.0, 0.0,]
-		else:
-			transition = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,]
+	def clean(self):
+		"""Makes sure the states adhere to the requirements placed on the first and
+		last states - call this after the model is built"""
+		#State0: (DM, DD) = (1, 0)
+		self.states[0].tr[5:7] = [0.0, '*',]
 
-		self.addState(transision=transision, emission=None, 
-				insert_emission=insert_emission, num=0)
-
-	def addEnd(transition = None, emission = None, insert_emission = None,
-							MAP=-1, CS='-', RF='-'):
-		"""Add an final node to the model"""
-		
-		if transision:
-			if len(transision) == 7:
-				transition[2] = 0 #M(k)->D(k+1)
-				transition[6] = 0 #D(k)->D(k+1)
-				transision[5] = 1.0
-
-		self.addState(transition=transision, emission=emission,
-				insert_emission=insert_emission, num=-1, MAP=MAP, CS=CS, RF=RF)
+		#FinalState: (DM, DD) = (1, 0)
+		s = self.states[-1]
+		s.tr[5:7] = [0.0, '*',]
+		# MD = 0
+		s.tr[2] = '*'
+		s.tr[0:2] = logodds(self._norm(expodds(s.tr[0:2])))
 	
-	def addState(transition = None, emission = None, insert_emission = None,
-								num=-1, MAP=-1, CS='-', RF='-'):
+	def addState(self, transition = None, emission = None, insert_emission = None,
+								MAP=-1, CS='-', RF='-'):
 		"""Add a new state with the properties specified
 			
-			transtision: the transition probabilities in the order
-				[M(k)->M(k+1), M(k)->I(k), M(k)->D(k+1), I(k)->M(k+1), I(k)->I(k+1),
-					D(k)->M(k+1), D(k)->D(k+1)]
-			
+			transtision: optional dict containing the optional keys 
+					MM, MI, MD, IM, II, DM, DD
+				or lower case equivalents
+
 			emission: dictionary containing the match emission probabilities for each
-				symbol in the alphabet
+				symbol in the alphabet. Omitted symbols are given p=0.
 			
 			insert_emission: dictionary containing the insert emission probabilities 
-				for each symbol in the alphabet
+				for each symbol in the alphabet. Omitted symbols are given p=0.
 
-			num: position within the set of nodes, defaults to the end if less than
-				zero, raises ValueError if greater than the number of states
-
-			MAP: MAP annotation for this node, integet
+			MAP: MAP annotation for this node, integer
 
 			RF: Reference Annotation for this node, char
 
 			CS: Consensus Structure annotation for this node
 		"""
-
-		if num < 0:
-			num = len(self.states)
-		elif num > len(self.states):
-			raise IndexError('num is greater than the number of states ({} > {})'
-					.format(num, len(self.states)))
 		
+		#defaults
 		if not transition:
-			transition = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,]
-		if len(transision) != 7:
-			raise ValueError('7 transision probabilities required, recieved {}'
-					.format(len(transision)))
-		
-		if emission:
-			if len(emission) != len(self.ALPHA):
-				raise ValueError('{} emission probabilities needed'
-						.format(len(self.alpha)))
-			if sum(emission.iteritems()) != 1.0:
-				raise ValueError('emission probabilities do not sum to 1 ({})'
-					.format(sum(emission.iteritems())))
+			transition = {'MM': 1.0,}
+		if not emission:
+			emission = {}
+			for letter in self.alpha:
+				emission[letter] = 1
+		if not insert_emission:
+			insert_emission = {}
+			for letter in self.alpha:
+				insert_emission[letter] = 1
 
-		if insert_emission:
-			if len(insert_emission) != len(self.ALPHA):
-				raise ValueError('{} insert_emission probabilities needed'
-						.format(len(self.alpha)))
-			if sum(insert_emission.iteritems()) != 1.0:
-				raise ValueError('insert_emission probabilities do not sum to 1 ({})'
-					.format(sum(insert_emission.iteritems())))
+		#transitions
+		tr = self._gettr(transition)
 
-		state = State()
-		state.num = num
-		state.MAP = MAP
-		state.RF  = RF
-		state.CS  = CS
+		#emissions
+		em = self._getem(emission, 'match emissions')
+		iem= self._getem(insert_emission, 'insert emissions')
 
-		state.transition = [-math.log(x) for x in transition]
-		if emission:
-			state.emission = [-math.log(emission[x]) for x in
-				sorted(emission.iterkeys())]
-		else:
-			state.emission = [_get_log_prob(1 / len(self.ALPHA)),] * len(self.ALPHA)
+		s = State()
+		s.tr=tr
+		s.me=em
+		s.ie=iem
+		s.num=len(self.states)
+		s.MAP=MAP
+		s.CS=CS
+		s.RF=RF
 
-		if insert_emission:
-			state.insert_emission = [_get_log_prob(insert_emission[x]) for x in
-				sorted(insert_emission.iterkeys())]
-		else:
-			state.insert_emission = [_get_log_prob(1 / len(self.ALPHA)),] * len(self.ALPHA)
-		
-		self.states.insert(num, state)
-		self.LENG = len(self.states) -1
+		self.states.append(s)
 
-def _get_log_prob(p):
+	def _gettr(self, transition):
+		#get the values
+		tr = [-1,]*7
+		for (k,v) in transition.iteritems():
+			if v < 0:
+				raise ValueError('Value of \'{}\' is less than zero in transision'
+						.format(k))
+			try:
+				i = self._trorder.index(k.upper())
+			except ValueError:
+				raise ValueError('Unknown key \'{}\' in transition'.format(k))
+			if tr[i] >= 0:
+				raise ValueError('Duplicate key \'{}\' in transition'.format(k))
+			tr[i] = v
+
+		#make sure no special values persist
+		for i in range(len(tr)):
+			if tr[i] < 0:
+				tr[i] = 0
+
+		#set defaults and normalise
+		if sum(tr[0:3]) == 0:
+			tr[0:3] = [1,0,0,]
+		tr[0:3] = self._norm(tr[0:3])
+
+		if sum(tr[3:5]) == 0:
+			tr[3:5] = [1,0,]
+		tr[3:5] = self._norm(tr[3:5])
+
+		if sum(tr[5:7]) == 0:
+			tr[5:7] = [1,0,]
+		tr[5:7] = self._norm(tr[5:7])
+
+		return logodds(tr)				
+
+	def _getem(self, emission, name):
+		r = [0,] * len(self.alpha)
+
+		for (k,v) in emission.iteritems():
+			if v < 0:
+				raise ValueError("Value \'{}\' less than zero in {}".format(k,name))
+			if emission.has_key(k.lower()) and emission.has_key(k.upper()):
+				raise ValueError("Duplicate key \'{}\' in {}".format(k,name))
+			i = self.alpha.find(k.upper())
+			if i < 0:
+				raise ValueError("Unknown symbol \'{}\' not in alphabet ({}) when"
+						" parsing {}".format(k,self.alpha, name))
+			r[i] = v
+
+		if sum(r) == 0:
+			r = [1,]*len(self.alpha)
+
+		return logodds(self._norm(r))
+
+	def _norm(self, l):
+		t = sum(l)
+		if t == 0:
+			t = 1
+		r = []
+		for v in l:
+			r.append(float(v) / t)
+		return r
+
+def logodds(p):
+	"""Takes a single or an interable of probabilities and returns -log(p)"""
+	if hasattr(p, '__iter__'):
+		r = []
+		for i in p:
+			if i <= 0:
+				r.append('*')
+			else:
+				r.append(-math.log(i))
+		return r
+
 	if p <= 0:
 		return '*'
 	return -math.log(p)
+
+def expodds(p):
+	if hasattr(p, '__iter__'):
+		r = []
+		for i in p:
+			if isinstance(i, basestring):
+				r.append(0.0)
+			else:
+				r.append(math.exp(-i))
+		return r
+
+	if isinstance(p, basestring):
+		return 0.0
+	return math.exp(-p)
+

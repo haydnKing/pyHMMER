@@ -151,5 +151,61 @@ class TestHMMReadWrite(unittest.TestCase):
 			self.assertEqual(s.RF, s2.RF)
 			self.assertEqual(s.CS, s2.CS)
 
+class TestHMMBuild(unittest.TestCase):
 
+	em = {'a':2, 'C':1, 'D':1,}
+	iem = {'D':2, 'E':1, 'F':1,}
+	tr = {'MM':1,'MI':2,'MD':1,'IM':2,'II':8,'DM':1,'DD':1,}
+
+	e_em = [0.5,0.25,0.25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,]
+	e_iem= [0,0,0.5,0.25,0.25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,]
+
+	e_tr = [[0.25,0.5,0.25,0.2,0.8,1,0,],
+					[0.25,0.5,0.25,0.2,0.8,0.5,0.5,],
+					[1.0/3,2.0/3,0,0.2,0.8,1,0,],]
+	
+	def test_build(self):
+		hmm = hmmfile.HMM(alphabet=hmmfile.ALPHABETS['AMINO'])
+
+		#build the HMM
+		for i in range(3):
+			hmm.addState(transition=self.tr, emission=self.em,
+					insert_emission=self.iem)
+		hmm.clean()
+
+		#there are 3 states
+		self.assertEqual(len(hmm.states), 3, 
+			"{} states built - should be 3".format(len(hmm.states)))
+
+		#test each state
+		for i,s in enumerate(hmm.states):
+			self.assertEqual(hmmfile.expodds(s.me), self.e_em, 
+					"Match emissions don't match for {}: got\n{} expected\n{}"
+					.format(i,hmmfile.expodds(s.me), self.e_em))
+			self.assertEqual(hmmfile.expodds(s.ie), self.e_iem,
+					"Insert emissions don't match for {}: got\n{} expected\n{}"
+					.format(i,hmmfile.expodds(s.ie), self.e_iem))
+			self.assertEqual(hmmfile.expodds(s.tr), self.e_tr[i],
+					"State transitions don't match for {}: got\n{} expected \n{}"
+					.format(i,hmmfile.expodds(s.tr), self.e_tr[i]))
+
+	def test_diplicates(self):
+		hmm = hmmfile.HMM(alphabet=hmmfile.ALPHABETS['AMINO'])
+
+		self.assertRaises(ValueError, hmm.addState, 
+				transition={'MM':1,'MI':2,'MD':1,'IM':2,'II':8,'DM':1,'DD':1,'mm':0,},
+				emission=self.em, 
+				insert_emission=self.iem)
 		
+		self.assertRaises(ValueError, hmm.addState, 
+				transition=self.tr, 
+				emission={'a':2, 'C':1, 'D':1,'A':2}, 
+				insert_emission=self.iem)
+		
+		self.assertRaises(ValueError, hmm.addState, 
+				transition=self.tr, 
+				emission=self.em, 
+				insert_emission={'D':2, 'E':1, 'F':1, 'd':2,})
+
+
+
