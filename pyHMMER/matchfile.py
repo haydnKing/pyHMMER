@@ -49,7 +49,7 @@ class Match:
 		mode = mode.lower()
 		if mode == 'hmm':
 			start = self.ali_from - self.hmm_from
-			end = self.ali_to + (self.query.LENG - self.hmm_to)
+			end = self.ali_to + (len(self.query) - self.hmm_to)
 		elif mode == 'env':
 			start = self.env_from
 			end = self.env_to
@@ -87,7 +87,7 @@ class Match:
 		elif self.frame < 0:
 			strand = -1
 		if not type:
-			type = self.query.NAME
+			type = self.query.name
 		return SeqFeature(FeatureLocation(span[0]-offset, span[1]-offset,
 			strand=strand), type="{}".format(type))
 	
@@ -127,6 +127,13 @@ class Match:
 
 	def __str__(self):
 		return unicode(self).encode('utf-8')
+
+	def __eq__(self, other):
+		return (isinstance(other, self.__class__)
+			and self.__dict__ == other.__dict__)
+
+	def __ne__(self, other):
+		return not self.__eq__(other)
 
 format_list = [
 		{'name': 't_name',			'len': 19, 'just': '<', 'type': 's', 
@@ -274,8 +281,8 @@ def load(f, queries, targets):
 	#do the loading
 	matches = []
 	for line in f:
-		#skip comments
-		if line.lstrip()[0] == '#':
+		#skip empty lines or comments
+		if not line.lstrip() or line.lstrip()[0] == '#':
 			continue
 		
 		#skip lines which aren't long enough

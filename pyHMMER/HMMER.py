@@ -30,7 +30,7 @@ def wrap_seqrecords(records):
 				for i,r in enumerate(records)]
 
 def wrap_hmms(hmms):
-	return [wrap(h, {'NAME': str(i), 'alpha': h.ALPH.upper(),}) 
+	return [wrap(h, {'name': str(i), 'alpha': h.alph.upper(),}) 
 					for i,h in enumerate(hmms)]
 
 class jackhmmer:
@@ -164,9 +164,9 @@ class hmmsearch:
 		self.hmm = wrap_hmms(self.hmm)
 
 		ttargets = []
-		hmm_alpha = self.hmm[0].ALPH.upper()
+		hmm_alpha = self.hmm[0].alph.upper()
 		for h in self.hmm:
-			if h.ALPH.upper() != hmm_alpha:
+			if h.alph.upper() != hmm_alpha:
 				raise ValueError("The HMMs don't all have the same alphabet")
 
 		#Translate targets if necessary
@@ -495,8 +495,8 @@ class hmmsearch:
 		for m in chain:
 			feats.append(m.asSeqFeature(mode=mode, offset=prot[0]))
 			
-		return SeqRecord(seq, name=query.NAME, 
-				description="{} containing protein".format(query.NAME), 
+		return SeqRecord(seq, name=query.name, 
+				description="{} containing protein".format(query.name), 
 				features=feats,
 				annotations={'source': target,
 										 'sourceloc': s_loc,})

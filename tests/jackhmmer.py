@@ -1,4 +1,4 @@
-import unittest, pickle
+import unittest
 
 from pyHMMER import HMMER, matchfile
 from Bio import SeqIO
@@ -12,6 +12,8 @@ class jackHMMER(unittest.TestCase):
 		j = HMMER.jackhmmer(seq, seqdb)
 
 		#load the expected output
-		m = pickle.load(open('tests/data/jack_out.pickle'))
+		seq_ = HMMER.wrap_seqrecords([seq,])
+		seqdb_ = HMMER.wrap_seqrecords([seqdb,])
+		m = matchfile.load('tests/data/jack_out', seq_, seqdb_)
 
 		self.assertEqual(m, j.matches)

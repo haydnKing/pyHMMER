@@ -146,12 +146,12 @@ class HMMParser:
 
 				#check if we've found the advertised number of states 
 				#			nb. hmm.LENG doesn't include the begin state """
-				if len(hmm.states)-1 < hmm.LENG:
+				if len(hmm.states)-1 < len(hmm):
 					self._addError('Too few states in model ({:d} < {:d})'
-							.format(len(hmm.states)-1, hmm.LENG))
-				if len(hmm.states)-1 > hmm.LENG:
+							.format(len(hmm.states)-1, len(hmm)))
+				if len(hmm.states)-1 > len(hmm):
 					self._addError('Too many states in model ({:d} > {:d})'
-							.format(len(hmm.states)-1, hmm.LENG))
+							.format(len(hmm.states)-1, len(hmm)))
 				#add the HMM to the list
 				ret.append(hmm)
 				state = self.S_default
@@ -164,19 +164,19 @@ class HMMParser:
 					#check all the required options were present
 					for o in REQUIRED:
 						try:
-							if not getattr(hmm, o):
+							if not getattr(hmm, o.lower()):
 								self._addError('Option \'{}\' is required'.format(o), False)
 						except AttributeError:
 							self._addError('Option \'{}\' is required'.format(o), False)
 							
 							if o == 'LENG':
-								setattr(hmm, o, 0)
+								setattr(hmm, o.lower(), 0)
 							else:
-								setattr(hmm, o, '')	
+								setattr(hmm, o.lower(), '')	
 					
 					#check if the line after next is a COMPO line
 					if re.match(r'^COMPO\s', lines[self.lineNum+2]):
-						hmm.COMPO = self._parse_prob(lines[self.lineNum+2].split()[1:], hmm.K)
+						hmm.compo = self._parse_prob(lines[self.lineNum+2].split()[1:], hmm.K)
 						#drop the next two lines
 						consume(iterator, 2)
 					else:
@@ -201,11 +201,11 @@ class HMMParser:
 
 				#simple strings
 				if key in ['NAME', 'ACC', 'DESC', 'ALPH', 'DATE',]:
-					setattr(hmm, key, val)
+					setattr(hmm, key.lower(), val)
 					if key == 'ALPH':
-						if hmm.ALPH.upper() in ALPHABETS:
-							hmm.SYMBOLS = ALPHABETS[hmm.ALPH.upper()]
-							hmm.K = len(hmm.SYMBOLS)
+						if hmm.alph.upper() in ALPHABETS:
+							hmm.symbols = ALPHABETS[hmm.alph.upper()]
+							hmm.K = len(hmm.symbols)
 						else:
 							self._addError('ALPH must be \'DNA\', \'RNA\' or \'AMINO\'')
 							continue
@@ -215,7 +215,7 @@ class HMMParser:
 						val = int(val)
 						if val < 0:
 							raise ValueError
-						setattr(hmm, key, val)
+						setattr(hmm, key.lower(), val)
 					except ValueError:
 						self._addError('{} must be a positive integer'.format(key))
 						continue
@@ -224,7 +224,7 @@ class HMMParser:
 					b = {'yes': True, 'no': False,}
 					val = val.lower()
 					if val in b:
-						setattr(hmm, key, b[val])
+						setattr(hmm, key.lower(), b[val])
 					else:
 						self._addError('{} must be \'yes\' or \'no\''.format(key))
 						continue
@@ -233,18 +233,18 @@ class HMMParser:
 					m2 = re.match(r'(\d+)\s+(\S+)$', val)
 					if m2:
 						try:
-							hmm.COM.append( (int(m2.group(1)), m2.group(2)))
+							hmm.com.append( (int(m2.group(1)), m2.group(2)))
 						except ValueError:
-							hmm.COM.append( (len(self.COM)+1, m2.group(0)))
+							hmm.com.append( (len(self.COM)+1, m2.group(0)))
 							continue
 					else:
-						hmm.COM.append( (len(self.COM)+1, value))
+						hmm.com.append( (len(self.COM)+1, value))
 				elif key == 'EFFN':
 					try:
 						val = float(val)
 						if val < 0:
 							raise ValueError
-						hmm.EFFN = val
+						hmm.effn = val
 					except ValueError:
 						self._addError('EFFN must be a positive real')
 						continue
@@ -257,7 +257,7 @@ class HMMParser:
 							v2 = float(m2.group(2))
 							if v1 < 0 or v2 < 0:
 								raise ValueError
-							setattr(hmm, key, (v1, v2))
+							setattr(hmm, key.lower(), (v1, v2))
 						except ValueError:
 							self._addError('{} must be two positive reals'.format(key))
 							continue
@@ -274,7 +274,7 @@ class HMMParser:
 							f1 = float(m2.group(3))
 							f2 = float(m2.group(4))
 							if s1 == 'LOCAL' and s2 in ['MSV', 'VITERBI', 'FORWARD']:
-								hmm.STATS.append((s1, s2, f1, f2))
+								hmm.stats.append((s1, s2, f1, f2))
 							else:
 								if s1 != 'LOCAL':
 									self._addError('s1 must equal \'LOCAL\'')
@@ -306,8 +306,8 @@ class HMMParser:
 				#MAP number
 				try:
 					if(l[hmm.K+1] != '-'):
-						model_state.MAP = int(l[hmm.K+1])
-					elif hmm.MAP:
+						model_state.map = int(l[hmm.K+1])
+					elif hmm.map:
 						self._addWarning('Map annotation is \'-\', even though MAP is \'yes\'')
 				except ValueError:
 					self._addError('Map Annotation must be an integer or \'-\'')
@@ -315,15 +315,15 @@ class HMMParser:
 					self._addError('No Map annotation provided')
 				#RF annotation
 				try:
-					model_state.RF = l[hmm.K+2]
-					if len(model_state.RF) != 1:
+					model_state.rf = l[hmm.K+2]
+					if len(model_state.rf) != 1:
 						self._addError('RF annotation must be a single character')
 				except IndexError:
 					self._addError('No RF annotation provided')
 				#CS annotation
 				try:
-					model_state.CS = l[hmm.K+3]
-					if len(model_state.CS) != 1:
+					model_state.cs = l[hmm.K+3]
+					if len(model_state.cs) != 1:
 						self._addError('CS annotation must be a single character')
 				except IndexError:
 					self._addError('No CS annotation provided')
@@ -405,34 +405,34 @@ def write(hmms, f):
 		for o in ['NAME', 'ACC', 'DESC', 'LENG', 'ALPH', 'DATE', 'NSEQ', 'EFFN',
 				'CKSUM',]:
 			try:
-				f.write('{:<5s} {}\n'.format(o, getattr(hmm, o)))
+				f.write('{:<5s} {}\n'.format(o, getattr(hmm, o.lower())))
 			except AttributeError:
 				pass
 		for o in ['RF', 'CS', 'MAP']:
 			try:
-				if getattr(hmm, o):
+				if getattr(hmm, o.lower()):
 					f.write('{:<5s} yes\n'.format(o))
 				else:
 					f.write('{:<5s} no\n'.format(o))
 			except AttributeError:
 				pass
 
-		for c in hmm.COM:
+		for c in hmm.com:
 			f.write('COM   %s %s\n' % c)
 
 		for o in ['GA', 'TC', 'NC',]:
 			try:
-				out = getattr(hmm, o)
+				out = getattr(hmm, o.lower())
 				f.write('{:<5s} {:.2f}  {:.2f}\n'.format(o, out[0], out[1]))
 			except AttributeError:
 				pass
 
-		for s in hmm.STATS:
+		for s in hmm.stats:
 			f.write('STATS {:<5s} {:<10s} {:8f} {:8f}\n'.format(*s))
 
 		#write HMM lines
 		f.write('HMM ')
-		f.write( '%9s'*len(hmm.SYMBOLS) % tuple(hmm.SYMBOLS))
+		f.write( '%9s'*len(hmm.symbols) % tuple(hmm.symbols))
 		f.write(
 			'\n            m->m     m->i     m->d'
 			'     i->m     i->i     d->m     d->d\n')
@@ -445,7 +445,7 @@ def write(hmms, f):
 		#write CMPO, if it exists. Should probably calculate it...
 		try:
 			f.write(("%7s" + ("%9s" * hmm.K) + "\n") % 
-					(('COMPO',) + tuple((ff(f) for f in hmm.COMPO))))
+					(('COMPO',) + tuple((ff(f) for f in hmm.compo))))
 		except AttributeError:
 			pass
 
@@ -465,7 +465,7 @@ def write(hmms, f):
 		#write model
 		for i,s in enumerate(hmm.states[1:], 1):
 			f.write(me_fmt % ((i,) + tuple((ff(f) for f in s.me)) + 
-				(s.MAP, s.RF, s.CS)))
+				(s.map, s.rf, s.cs)))
 			f.write(ie_fmt % tuple((ff(f) for f in s.ie)))
 			f.write(tr_fmt % tuple((ff(f) for f in s.tr)))
 
@@ -480,9 +480,9 @@ class State:
 	"""A state within an HMM"""
 	def __init__(self):
 		self.num = -1
-		self.MAP = -1
-		self.RF = '-'
-		self.CS = '-'
+		self.map = -1
+		self.rf = '-'
+		self.cs = '-'
 		self.me = []
 		self.ie = []
 		self.tr = []
@@ -492,14 +492,14 @@ class HMM:
 	_trorder = ['MM','MI','MD','IM','II','DM','DD']
 
 	def __init__(self, name='', alphabet=None):
-		self.NAME = name
-		self.LENG = 0
+		self.name = name
+		self.leng = 0
 
 		self.states = []
-		self.COM = []
-		self.STATS = []
+		self.com = []
+		self.stats = []
 		#assume these to be false if not present
-		self.RM = self.CS = self.MAP = False
+		self.rm = self.cs = self.map = False
 		self.K = 0
 		self.alpha = alphabet
 
@@ -561,9 +561,9 @@ class HMM:
 		s.me=em
 		s.ie=iem
 		s.num=len(self.states)
-		s.MAP=MAP
-		s.CS=CS
-		s.RF=RF
+		s.map=MAP
+		s.cs=CS
+		s.rf=RF
 
 		self.states.append(s)
 
@@ -629,6 +629,9 @@ class HMM:
 		for v in l:
 			r.append(float(v) / t)
 		return r
+
+	def __len__(self):
+		return self.leng
 
 def logodds(p):
 	"""Takes a single or an interable of probabilities and returns -log(p)"""

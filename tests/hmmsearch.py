@@ -43,7 +43,7 @@ class TestFiltering(unittest.TestCase):
 		"""Build a match"""
 		m = matchfile.Match()
 		m.hmm_from = 0
-		m.hmm_to = self.hmm.LENG
+		m.hmm_to = self.hmm.leng
 		m.ali_from = m.env_from = start
 		m.ali_to   = m.env_to   = stop
 		m.score = score
