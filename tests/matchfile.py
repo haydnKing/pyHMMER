@@ -52,8 +52,8 @@ class TestMatchRead(unittest.TestCase):
 	for r in SeqIO.parse('tests/data/matchtarget.fasta', 'fasta'):
 		targets.append(r)
 
-	targets = HMMER.wrap_seqrecord(targets)
-	hmms  = HMMER.wrap_hmm(hmms)
+	targets = HMMER.wrap_seqrecords(targets)
+	hmms  = HMMER.wrap_hmms(hmms)
 	
 	matches = matchfile.load('tests/data/matchfile', hmms, targets)
 

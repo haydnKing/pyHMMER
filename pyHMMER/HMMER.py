@@ -25,11 +25,11 @@ class wrap(object):
 			return self.overrides[item]
 		return getattr(self.wrapped, item)
 
-def wrap_seqrecord(records):
+def wrap_seqrecords(records):
 	return [wrap(r, {'id': str(i), 'alpha': sequtils.seq_type(str(r.seq))}) 
 				for i,r in enumerate(records)]
 
-def wrap_hmm(hmms):
+def wrap_hmms(hmms):
 	return [wrap(h, {'NAME': str(i), 'alpha': h.ALPH.upper(),}) 
 					for i,h in enumerate(hmms)]
 
@@ -47,7 +47,7 @@ class jackhmmer:
 			'fragthresh','wid','eset','ere','esigma','eid','EmL','EmN','EvL','EvN',
 			'EfL','EfM','Eft','seed','cpu']
 
-	def __init__(self, seq, seqdb, **kwargs):
+	def __init__(self, seq, seqdb, verbose=False, **kwargs):
 		"""
 			seq: the sequence to search with
 				a single or a list of SeqRecords
@@ -61,7 +61,7 @@ class jackhmmer:
 		if isinstance(seq, SeqRecord):
 			seq = [seq,]
 		if isinstance(seqdb, SeqRecord):
-			seqdb = [seq,]
+			seqdb = [seqdb,]
 
 		args = []
 		for k,v in kwargs.iteritems():
@@ -73,15 +73,15 @@ class jackhmmer:
 				raise ValueError("Unknown jackhmmer argument \'{}\'".format(k))
 
 		#apply unique ids to the targets
-		self.seq = wrap_seqrecord(seq)
-		self.seqdb=wrap_seqrecord(seqdb)
+		self.seq = wrap_seqrecords(seq)
+		self.seqdb=wrap_seqrecords(seqdb)
 
 		seq_file = tempfile.NamedTemporaryFile()
 		seqdb_file = tempfile.NamedTemporaryFile()
 		out_file = tempfile.NamedTemporaryFile()
 
-		SeqIO.write(seq, seq_file, 'fasta')
-		SeqIO.write(seqdb, seqdb_file, 'fasta')
+		SeqIO.write(self.seq, seq_file, 'fasta')
+		SeqIO.write(self.seqdb, seqdb_file, 'fasta')
 		seq_file.flush()
 		seqdb_file.flush()
 
@@ -96,8 +96,8 @@ class jackhmmer:
 			print "Closing files..."
 
 		out_file.close()
-		hmm_file.close()
-		target_file.close()
+		seq_file.close()
+		seqdb_file.close()
 
 	def annotate(mode='hmm', type=None):
 		"""Annotate the target seqdbs with the discovered features
@@ -160,8 +160,8 @@ class hmmsearch:
 			print "Loading HMMs and Targets..."
 
 		#apply unique ids
-		self.targets = wrap_seqrecord(self.targets) 
-		self.hmm = wrap_hmm(self.hmm)
+		self.targets = wrap_seqrecords(self.targets) 
+		self.hmm = wrap_hmms(self.hmm)
 
 		ttargets = []
 		hmm_alpha = self.hmm[0].ALPH.upper()
