@@ -90,11 +90,11 @@ const char DNA2AMINO[] = {
 
 const char GENERIC_DNA[] = "gatcrywsmkhbvdn";
 const char GENERIC_RNA[] = "gaucrywsmkhbvdn";
-const char GENERIC_AMINO[] = "acdefghiklmnpqrstvwy";
+const char GENERIC_AMINO[] = "acdefghiklmnpqrstvwy*";
 
 const unsigned int DNA_LEN = 15;
 const unsigned int RNA_LEN = 15;
-const unsigned int AMINO_LEN = 20;
+const unsigned int AMINO_LEN = 21;
 
 
 inline int baseAsInt(char base, unsigned int* out)
@@ -339,14 +339,18 @@ seq_type(PyObject *self, PyObject *args)
     }
 
     int DNA = 1, RNA = 1, AMINO = 1, TMP;
+    //record which char ruled out each alphabet
+    char notd = ' ', notr = ' ', nota = ' ';
     unsigned int i, j;
     char c;
     for(i = 0; i < ilen; i++)
     {
         c = iseq[i];
         
-        if(c < 'a')
+        //if c is upper case
+        if(c >= 'A' && c <= 'Z')
         {
+            //convert to lower case
             c = c - 'A' + 'a';
         }
 
@@ -361,6 +365,7 @@ seq_type(PyObject *self, PyObject *args)
             if(TMP == 0)
             {
                 DNA = 0;
+                notd = c;
             }
         }
         if(RNA)
@@ -374,6 +379,7 @@ seq_type(PyObject *self, PyObject *args)
             if(TMP == 0)
             {
                 RNA = 0;
+                notr = c;
             }
         }
         if(AMINO)
@@ -387,6 +393,7 @@ seq_type(PyObject *self, PyObject *args)
             if(TMP == 0)
             {
                 AMINO = 0;
+                nota = c;
             }
         }
 
@@ -402,7 +409,10 @@ seq_type(PyObject *self, PyObject *args)
     if(AMINO)
         return Py_BuildValue("s", "AMINO");
 
-    PyErr_SetString(PyExc_ValueError, "Unknown Alphabet");
+    char err_string[256];
+    sprintf(err_string, "Unknown Alphabet: not DNA (%c), RNA (%c) or Amino(%c)",
+            notd, notr, nota);
+    PyErr_SetString(PyExc_ValueError, err_string);
     return NULL;
 }
 

@@ -235,10 +235,10 @@ class HMMParser:
 						try:
 							hmm.com.append( (int(m2.group(1)), m2.group(2)))
 						except ValueError:
-							hmm.com.append( (len(self.COM)+1, m2.group(0)))
+							hmm.com.append( (len(hmm.com)+1, m2.group(0)))
 							continue
 					else:
-						hmm.com.append( (len(self.COM)+1, value))
+						hmm.com.append( (len(hmm.com)+1, val))
 				elif key == 'EFFN':
 					try:
 						val = float(val)

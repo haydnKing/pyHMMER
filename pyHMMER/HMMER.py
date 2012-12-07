@@ -25,8 +25,9 @@ class wrap(object):
 			return self.overrides[item]
 		return getattr(self.wrapped, item)
 
-def wrap_seqrecords(records):
-	return [wrap(r, {'id': str(i), 'alpha': sequtils.seq_type(str(r.seq))}) 
+def wrap_seqrecords(records, alpha = None):
+	return [wrap(r, {'id': str(i), 
+		'alpha': alpha or sequtils.seq_type(str(r.seq))}) 
 				for i,r in enumerate(records)]
 
 def wrap_hmms(hmms):
@@ -38,6 +39,7 @@ class jackhmmer:
 
 	Attributes:
 		- matches: matches found by jackhmmer (matchfile.Match)
+		- hmms: list of the HMMs used during jackhmmer iterations
 	"""
 
 	SWITCHES = ['max', 'nobias', 'fast', 'hand','wpb','wgsc','wblosum','wnone',
@@ -73,12 +75,13 @@ class jackhmmer:
 				raise ValueError("Unknown jackhmmer argument \'{}\'".format(k))
 
 		#apply unique ids to the targets
-		self.seq = wrap_seqrecords(seq)
-		self.seqdb=wrap_seqrecords(seqdb)
+		self.seq = wrap_seqrecords(seq, alpha='AMINO')
+		self.seqdb=wrap_seqrecords(seqdb, alpha='AMINO')
 
 		seq_file = tempfile.NamedTemporaryFile()
 		seqdb_file = tempfile.NamedTemporaryFile()
 		out_file = tempfile.NamedTemporaryFile()
+		hmm_file = tempfile.NamedTemporaryFile()
 
 		SeqIO.write(self.seq, seq_file, 'fasta')
 		SeqIO.write(self.seqdb, seqdb_file, 'fasta')
@@ -86,11 +89,24 @@ class jackhmmer:
 		seqdb_file.flush()
 
 		p = Popen(['jackhmmer', '--qformat', 'fasta', '--tformat', 'fasta', 
-			'--domtblout', out_file.name,] + args + [seq_file.name, seqdb_file.name,], 
+			'--chkhmm', hmm_file.name, '--domtblout', out_file.name,] + args + 
+			[seq_file.name, seqdb_file.name,], 
 				stdout=PIPE, stdin=PIPE, stderr=PIPE)
 		out = p.communicate()
 
 		self.matches = matchfile.load(out_file, self.seq, self.seqdb)
+
+		#load the hmms
+		self.hmms = []
+		try:
+			i = 1
+			while True:
+				f = "{}-{}.hmm".format(hmm_file.name, i)
+				self.hmms.append(hmmfile.read(f)[0])
+				os.remove(f)
+				i += 1
+		except IOError:
+			pass
 
 		if verbose:
 			print "Closing files..."
@@ -375,15 +391,10 @@ class hmmsearch:
 
 		return chains
 
-	def annotate(self, target, mode='hmm'):
-		"""Annotate the seqRecord given by target"""
-		target = target or self.targets[0]
-
+	def annotate(self, mode='hmm'):
+		"""Annotate the all the targets given by target"""
 		for match in self.matches:
-			if match.target == target:
-				target.features.append(match.asSeqFeature(mode=mode))
-
-		return target
+			match.target.features.append(match.asSeqFeature(mode=mode))
 
 	def getProteins(self, **kwargs):
 		#prepare the arguments
