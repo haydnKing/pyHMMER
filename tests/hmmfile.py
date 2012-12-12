@@ -165,7 +165,7 @@ class TestHMMBuild(unittest.TestCase):
 					[1.0/3,2.0/3,0,0.2,0.8,1,0,],]
 	
 	def test_build(self):
-		hmm = hmmfile.HMM(alphabet=hmmfile.ALPHABETS['AMINO'])
+		hmm = hmmfile.HMM(alphabet='AMINO')
 
 		#build the HMM
 		for i in range(3):
@@ -190,7 +190,7 @@ class TestHMMBuild(unittest.TestCase):
 					.format(i,hmmfile.expodds(s.tr), self.e_tr[i]))
 
 	def test_diplicates(self):
-		hmm = hmmfile.HMM(alphabet=hmmfile.ALPHABETS['AMINO'])
+		hmm = hmmfile.HMM(alphabet='AMINO')
 
 		self.assertRaises(ValueError, hmm.addState, 
 				transition={'MM':1,'MI':2,'MD':1,'IM':2,'II':8,'DM':1,'DD':1,'mm':0,},

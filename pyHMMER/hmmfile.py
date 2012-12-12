@@ -500,8 +500,13 @@ class HMM:
 		self.stats = []
 		#assume these to be false if not present
 		self.rm = self.cs = self.map = False
-		self.K = 0
-		self.alpha = alphabet
+		self.alph = self.alpha = alphabet
+		if self.alph:
+			self.symbols = ALPHABETS[self.alpha.upper()]
+			self.K = len(self.symbols)
+		else:
+			self.symbols = ''
+			self.K = 0
 
 	def clean(self):
 		"""Makes sure the states adhere to the requirements placed on the first and
@@ -603,21 +608,21 @@ class HMM:
 		return logodds(tr)				
 
 	def _getem(self, emission, name):
-		r = [0,] * len(self.alpha)
+		r = [0,] * self.K
 
 		for (k,v) in emission.iteritems():
 			if v < 0:
 				raise ValueError("Value \'{}\' less than zero in {}".format(k,name))
 			if emission.has_key(k.lower()) and emission.has_key(k.upper()):
 				raise ValueError("Duplicate key \'{}\' in {}".format(k,name))
-			i = self.alpha.find(k.upper())
+			i = ALPHABETS[self.alpha].find(k.upper())
 			if i < 0:
 				raise ValueError("Unknown symbol \'{}\' not in alphabet ({}) when"
 						" parsing {}".format(k,self.alpha, name))
 			r[i] = v
 
 		if sum(r) == 0:
-			r = [1,]*len(self.alpha)
+			r = [1,]*self.K
 
 		return logodds(self._norm(r))
 
