@@ -2,11 +2,6 @@ from pyHMMER import hmmfile, matchfile, sequtils, HMMER
 from Bio import SeqIO
 import unittest, tempfile, re
 
-
-
-
-from pyHMMER import HMMER
-
 from matchfile import check_valid, hmm_seq, ali_seq
 
 class Testhmmsearch(unittest.TestCase):
@@ -22,6 +17,28 @@ class Testhmmsearch(unittest.TestCase):
 		self.assertEqual(len(h.matches), 17)
 		s = sequtils.translate(str(h.matches[0].getSequence()))
 		self.assertEqual(s, hmm_seq)
+
+class TestAnnotation(unittest.TestCase):
+
+	def test_annotation(self):
+		#load the hmm
+		hmm = hmmfile.read('tests/data/valid.hmm')
+
+		s1 = SeqIO.read('tests/data/PPR10.gb', 'genbank')
+		s1.features = []
+		s2 = SeqIO.read('tests/data/PPR10.gb', 'genbank')
+		s2.features = []
+		s2.seq = s2.seq.reverse_complement()
+		
+
+		h1 = HMMER.hmmsearch(hmm, s1)
+		h2 = HMMER.hmmsearch(hmm, s2)
+		h1.annotate()
+		h2.annotate()
+
+		for (f1, f2) in zip(s1.features, s2.features):
+			self.assertEqual(str(f1.extract(s1.seq)), str(f2.extract(s2.seq)))
+			
 
 class TestFiltering(unittest.TestCase):
 

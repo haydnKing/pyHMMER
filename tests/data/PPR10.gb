@@ -1,0 +1,122 @@
+LOCUS       NM_001163740            2673 bp    mRNA    linear   PLN 16-JUN-2012
+DEFINITION  Zea mays pentatricopeptide repeat10 (ppr10), mRNA.
+ACCESSION   NM_001163740
+VERSION     NM_001163740.1  GI:254939548
+KEYWORDS    .
+SOURCE      Zea mays
+  ORGANISM  Zea mays
+            Eukaryota; Viridiplantae; Streptophyta; Embryophyta; Tracheophyta;
+            Spermatophyta; Magnoliophyta; Liliopsida; Poales; Poaceae; PACMAD
+            clade; Panicoideae; Andropogoneae; Zea.
+REFERENCE   1  (bases 1 to 2673)
+  AUTHORS   Prikryl,J., Rojas,M., Schuster,G. and Barkan,A.
+  TITLE     Mechanism of RNA stabilization and translational activation by a
+            pentatricopeptide repeat protein
+  JOURNAL   Proc. Natl. Acad. Sci. U.S.A. 108 (1), 415-420 (2011)
+   PUBMED   21173259
+  REMARK    GeneRIF: Pentatricopeptide repeat protein plays a role in RNA
+            stabilization and translational activation.
+REFERENCE   2  (bases 1 to 2673)
+  AUTHORS   Soderlund,C., Descour,A., Kudrna,D., Bomhoff,M., Boyd,L.,
+            Currie,J., Angelova,A., Collura,K., Wissotski,M., Ashley,E.,
+            Morrow,D., Fernandes,J., Walbot,V. and Yu,Y.
+  TITLE     Sequencing, mapping, and analysis of 27,455 maize full-length cDNAs
+  JOURNAL   PLoS Genet. 5 (11), E1000740 (2009)
+   PUBMED   19936069
+REFERENCE   3  (bases 1 to 2673)
+  AUTHORS   Pfalz,J., Bayraktar,O.A., Prikryl,J. and Barkan,A.
+  TITLE     Site-specific binding of a PPR protein defines and stabilizes 5'
+            and 3' mRNA termini in chloroplasts
+  JOURNAL   EMBO J. 28 (14), 2042-2052 (2009)
+   PUBMED   19424177
+  REMARK    GeneRIF: Study describes a pentatricopeptide repeat (PPR) protein,
+            PPR10, whose binding defines mRNA segments derived from 2
+            transcription units in maize chloroplasts; PPR10 interacts in vivo
+            and in vitro with 2 intergenic RNA regions of similar sequence.
+COMMENT     PROVISIONAL REFSEQ: This record has not yet been subject to final
+            NCBI review. The reference sequence was derived from FJ490677.1.
+FEATURES             Location/Qualifiers
+     source          1..2673
+                     /organism="Zea mays"
+                     /mol_type="mRNA"
+                     /db_xref="taxon:4577"
+     gene            1..2673
+                     /gene="ppr10"
+                     /note="pentatricopeptide repeat10"
+                     /db_xref="GeneID:100302579"
+                     /db_xref="MaizeGDB:1232900"
+     misc_feature    57..59
+                     /gene="ppr10"
+                     /note="upstream in-frame stop codon"
+     CDS             168..2528
+                     /gene="ppr10"
+                     /note="pentatricopeptide10; chloroplast pentatricopeptide
+                     repeat protein 10"
+                     /codon_start=1
+                     /product="pentatricopeptide repeat10"
+                     /protein_id="NP_001157212.1"
+                     /db_xref="GI:254939549"
+                     /db_xref="GeneID:100302579"
+                     /db_xref="MaizeGDB:1232900"
+                     /translation="MEATGRGLFPNKPTLPAGPRKRGPLLPAAPPPPSPSSLPLDSLL
+                     LHLTAPAPAPAPAPRRSHQTPTPPHSFLSPDAQVLVLAISSHPLPTLAAFLASRRDEL
+                     LRADITSLLKALELSGHWEWALALLRWAGKEGAADASALEMVVRALGREGQHDAVCAL
+                     LDETPLPPGSRLDVRAYTTVLHALSRAGRYERALELFAELRRQGVAPTLVTYNVVLDV
+                     YGRMGRSWPRIVALLDEMRAAGVEPDGFTASTVIAACCRDGLVDEAVAFFEDLKARGH
+                     APCVVTYNALLQVFGKAGNYTEALRVLGEMEQNGCQPDAVTYNELAGTYARAGFFEEA
+                     ARCLDTMASKGLLPNAFTYNTVMTAYGNVGKVDEALALFDQMKKTGFVPNVNTYNLVL
+                     GMLGKKSRFTVMLEMLGEMSRSGCTPNRVTWNTMLAVCGKRGMEDYVTRVLEGMRSCG
+                     VELSRDTYNTLIAAYGRCGSRTNAFKMYNEMTSAGFTPCITTYNALLNVLSRQGDWST
+                     AQSIVSKMRTKGFKPNEQSYSLLLQCYAKGGNVAGIAAIENEVYGSGAVFPSWVILRT
+                     LVIANFKCRRLDGMETAFQEVKARGYNPDLVIFNSMLSIYAKNGMYSKATEVFDSIKR
+                     SGLSPDLITYNSLMDMYAKCSESWEAEKILNQLKCSQTMKPDVVSYNTVINGFCKQGL
+                     VKEAQRVLSEMVADGMAPCAVTYHTLVGGYSSLEMFSEAREVIGYMVQHGLKPMELTY
+                     RRVVESYCRAKRFEEARGFLSEVSETDLDFDKKALEAYIEDAQFGR"
+ORIGIN      
+        1 ctccccgtcc acccgctccc gccaccgtat ccgtaaaccc aatcccccat ttcccctagg
+       61 gggcatgctg cgcgcgggcc tcccctccac gctcaccagc tcgtagccgt ttcctgccgc
+      121 tcctggctcc tgcaccgagc ggcaaacccg cgccgccgcc gccgccgatg gaggccaccg
+      181 gcagggggct gttcccgaac aagcccaccc tcccggcggg gccgaggaaa cggggcccgc
+      241 tcctcccggc cgcgcccccg ccaccgtccc cctcctcgct cccgctcgac tcgctcctgc
+      301 tccacctcac cgcgcccgcc cccgcgccgg cccccgcgcc gcggcggtcg caccagacgc
+      361 cgacgccgcc gcactccttc ctctcccccg acgcgcaggt gctggtgctc gccatctcct
+      421 cgcacccgct ccccacgctg gcggccttcc tggcctcccg ccgcgacgag ctcctccgcg
+      481 cggacatcac gtccctgctc aaggcgctgg agctctcggg gcactgggag tgggcgctcg
+      541 cgctcctccg gtgggcaggc aaggagggtg ccgccgacgc gtcggcgctc gagatggtcg
+      601 tccgcgcgct gggccgcgag ggccagcacg acgccgtctg cgcgctgctc gacgaaacgc
+      661 cgctcccgcc gggctcccgc ctcgacgtcc gcgcctacac caccgtgctg cacgcgctct
+      721 cccgcgcggg ccggtacgag cgcgcgctcg agctcttcgc cgagctccgg cgccaggggg
+      781 tggcgcccac gctcgtcacc tacaacgtcg tgctggacgt gtacgggcgg atgggccggt
+      841 cgtggccgcg gatcgtcgcc ctcctcgatg agatgcgcgc cgccggggtc gagcccgacg
+      901 gcttcaccgc cagcacggtg atcgccgcgt gctgccgcga cgggctggtt gacgaggcgg
+      961 tggcgttctt cgaggacctc aaggcccgcg gccacgcccc gtgcgtcgtc acgtacaacg
+     1021 cgttgctcca ggtgttcggc aaggccggga actacacgga ggcgctgcgc gtgctcgggg
+     1081 agatggagca gaacggctgc cagccagatg ctgtgacgta caacgagctc gccggaacgt
+     1141 acgcccgggc tgggttcttc gaggaggctg ccaggtgcct ggacacaatg gcatccaagg
+     1201 gtctgttgcc aaacgcattc acgtacaaca ccgtgatgac agcctatggg aatgttggga
+     1261 aggtggatga ggcgctcgct ctgtttgacc agatgaagaa gaccgggttc gtgccgaacg
+     1321 tgaacacgta caatcttgtc cttggcatgc ttggcaagaa gtcaaggttc acggtgatgc
+     1381 tagagatgct tggagagatg tcgaggagcg gatgcacacc gaaccgggta acatggaaca
+     1441 caatgcttgc agtctgtggg aagcgtggca tggaggacta cgtcacccgg gttctggagg
+     1501 ggatgaggtc ttgcggggtt gaactgagcc gagacaccta caacaccctg atagctgcgt
+     1561 acggccggtg tggctcgagg actaatgcct tcaagatgta caacgagatg accagcgctg
+     1621 gattcacccc ctgcatcacc acgtacaacg cgttgctgaa cgtgctgtcg cggcagggcg
+     1681 actggtccac cgcccagtcg atcgtaagca aaatgaggac caaggggttc aagccgaacg
+     1741 agcagtcgta ttcgctgctg ctccagtgct acgcgaaggg gggcaacgtg gcagggatag
+     1801 ccgcgatcga gaacgaggtg tacggatcag gtgccgtttt cccaagctgg gtgatcctga
+     1861 ggacccttgt catcgccaat ttcaagtgcc ggcgactgga tggcatggag acggcgtttc
+     1921 aagaggtgaa ggccagaggc tacaacccgg acctcgtgat attcaactcc atgctgtcca
+     1981 tctacgcgaa gaacgggatg tacagcaagg ccaccgaggt cttcgactcc atcaagcgga
+     2041 gcgggctgag ccccgacctc atcacctaca acagcctgat ggacatgtac gccaagtgca
+     2101 gcgagtcgtg ggaggccgag aagatactga accagctcaa gtgctcccag acgatgaagc
+     2161 ccgacgtggt gtcctacaac acggtcataa acgggttctg caagcagggg ctggtgaaag
+     2221 aggcccagag ggtcctctcg gagatggtcg ccgacggcat ggccccctgc gccgtgacct
+     2281 accacacgct cgtcgggggt tactccagcc tggagatgtt cagcgaggcc agggaggtca
+     2341 tcggctacat ggtccagcac ggcctcaagc ctatggagct gacctacagg agagtcgtcg
+     2401 agagctactg cagagcgaag cggttcgagg aggctcgcgg cttcctgtcc gaggtctcgg
+     2461 agaccgacct ggattttgac aagaaggcgc tcgaagccta tatagaggat gcgcagtttg
+     2521 gaaggtagag agagggagag tggctgtgct aagaggtggg cttaggtaca gttcgtacgg
+     2581 ttttctttgg ttacaggcaa ctgtcggttt gcaattcgct tgttatatat atatgctcaa
+     2641 gttttgataa aaaaaaaaaa aaaaaaaaaa aaa
+//
+

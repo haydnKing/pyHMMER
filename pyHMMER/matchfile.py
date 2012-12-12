@@ -86,10 +86,8 @@ class Match:
 			strand = 1
 		elif self.frame < 0:
 			strand = -1
-		if not type:
-			type = self.query.name
 		return SeqFeature(FeatureLocation(span[0]-offset, span[1]-offset,
-			strand=strand), type="{}".format(type))
+			strand=strand), type="{}".format(type or self.query.name))
 	
 	def withinTarget(self):
 		"""return true if the hmm position is within the target sequence"""
@@ -104,15 +102,15 @@ class Match:
 			if (self.translation['target'].upper() in ['DNA', 'RNA'] and 
 					self.translation['query'].upper() == 'AMINO'):
 				#get the length of the target sequence
-				l = len(self.target.seq)
+				l = len(self.target)
 				#and find my position within it
-				ret = (3 * pos[0], 3* pos[1])
+				ret = (3*pos[0], 3*pos[1])
 				if self.frame not in [1,2,3,-1,-2,-3]:
 					raise ValueError("Nonsensical Frame \'{}\'".format(self.frame))
 				if self.frame > 0:
 					ret = tuple(x+self.frame-1 for x in ret)
 				elif self.frame < 0:
-					ret = tuple(l-x for x in ret)
+					ret = tuple(l-(x-self.frame-1) for x in ret)
 				return ret
 			else:
 				raise ValueError("Unhandled Translation {query} to {target}"
