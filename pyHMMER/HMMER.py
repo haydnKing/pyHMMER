@@ -387,8 +387,6 @@ class hmmsearch:
 
 				add_chain(chain)
 
-		print "Found {} chains".format(len(chains))
-
 		return chains
 
 	def annotate(self, mode='hmm'):
@@ -419,7 +417,6 @@ class hmmsearch:
 			if p:
 				ret.append(p)
 
-		print "Found {} proteins".format(len(ret))
 		return ret
 					
 	def getProtein(self, chain, mode='hmm', max_5_prime=None, max_3_prime=None):
