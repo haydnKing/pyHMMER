@@ -389,10 +389,14 @@ class hmmsearch:
 
 		return chains
 
-	def annotate(self, mode='hmm'):
-		"""Annotate the all the targets given by target"""
+	def annotate(self, targets, mode='hmm'):
+		"""Annotate a target or list of targets given in target"""
+		if isinstance(targets, SeqRecord):
+			targets = [targets,]
+
 		for match in self.matches:
-			match.target.features.append(match.asSeqFeature(mode=mode))
+			if match.target in targets:
+				match.target.features.append(match.asSeqFeature(mode=mode))
 
 	def getProteins(self, **kwargs):
 		#prepare the arguments

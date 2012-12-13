@@ -33,8 +33,8 @@ class TestAnnotation(unittest.TestCase):
 
 		h1 = HMMER.hmmsearch(hmm, s1)
 		h2 = HMMER.hmmsearch(hmm, s2)
-		h1.annotate()
-		h2.annotate()
+		h1.annotate(s1)
+		h2.annotate(s2)
 
 		for (f1, f2) in zip(s1.features, s2.features):
 			self.assertEqual(str(f1.extract(s1.seq)), str(f2.extract(s2.seq)))
