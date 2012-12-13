@@ -189,7 +189,20 @@ class TestHMMBuild(unittest.TestCase):
 					"State transitions don't match for {}: got\n{} expected \n{}"
 					.format(i,hmmfile.expodds(s.tr), self.e_tr[i]))
 
-	def test_diplicates(self):
+	def test_blank(self):
+		hmm = hmmfile.HMM(alphabet = 'DNA')
+
+		for i in range(5):
+			hmm.addState()
+		hmm.clean()
+
+		self.assertEqual(len(hmm.states), 5)
+		#inner states should be equal, except for num
+		for i in range(2,4):
+			hmm.states[i].num = 1
+			self.assertEqual(hmm.states[1], hmm.states[i])
+
+	def test_duplicates(self):
 		hmm = hmmfile.HMM(alphabet='AMINO')
 
 		self.assertRaises(ValueError, hmm.addState, 

@@ -487,6 +487,29 @@ class State:
 		self.ie = []
 		self.tr = []
 
+	def __eq__(self, rhs):
+		return (self.num == rhs.num and
+						self.map == rhs.map and
+						self.rf  == rhs.rf  and
+						self.cs  == rhs.cs  and
+						self.me  == rhs.me  and
+						self.ie  == rhs.ie  and
+						self.tr  == rhs.tr)
+	
+	def __ne__(self, rhs):
+		return not self.__eq__(rhs)
+
+	def __unicode__(self):
+		return ("HMM State num: {}" + ("\n  {}: {}"*6)).format(
+				self.num, 'map', self.map, 'rf', self.rf, 'cs', self.cs, 
+				'me', self.me, 'ie', self.ie, 'tr', self.tr)
+
+	def __str__(self):
+		return unicode(self).encode('utf-8')
+
+	def __repr__(self):
+		return "HMM State({})".format(self.num)
+
 class HMM:
 	"""A Hidden Markov Model"""
 	_trorder = ['MM','MI','MD','IM','II','DM','DD']
@@ -547,11 +570,11 @@ class HMM:
 			transition = {'MM': 1.0,}
 		if not emission:
 			emission = {}
-			for letter in self.alpha:
+			for letter in self.symbols:
 				emission[letter] = 1
 		if not insert_emission:
 			insert_emission = {}
-			for letter in self.alpha:
+			for letter in self.symbols:
 				insert_emission[letter] = 1
 
 		#transitions
@@ -617,8 +640,8 @@ class HMM:
 				raise ValueError("Duplicate key \'{}\' in {}".format(k,name))
 			i = ALPHABETS[self.alpha].find(k.upper())
 			if i < 0:
-				raise ValueError("Unknown symbol \'{}\' not in alphabet ({}) when"
-						" parsing {}".format(k,self.alpha, name))
+				raise ValueError("Unknown symbol \'{}\' not in alphabet ({}[\'{}\']) when"
+						" parsing {}".format(k,self.alpha, ALPHABETS[self.alpha], name))
 			r[i] = v
 
 		if sum(r) == 0:
