@@ -661,6 +661,9 @@ class HMM:
 	def __len__(self):
 		return self.leng
 
+	def __nonzero__(self):
+		return True
+
 def logodds(p):
 	"""Takes a single or an interable of probabilities and returns -log(p)"""
 	if hasattr(p, '__iter__'):

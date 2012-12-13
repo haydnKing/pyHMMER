@@ -147,6 +147,8 @@ class hmmsearch:
 				DNA sequences, 6-frame translations will be produced automatically
 				Reverse translations (from Amino Acid to DNA) are not supported
 		"""
+		if verbose:
+			print "Searching..."
 		# Load the HMM(s)
 		if not hasattr(hmm, "__iter__"):
 			hmm = [hmm,]
