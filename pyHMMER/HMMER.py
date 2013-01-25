@@ -242,8 +242,7 @@ class hmmsearch(hmmertool):
 
 		if verbose:
 			print "Calling hmmsearch..."
-
-		print " ".join(['hmmsearch',] + args + ['--tformat', 'fasta', 
+			print " ".join(['hmmsearch',] + args + ['--tformat', 'fasta', 
 			'--domtblout', out_file.name, hmm_file.name, target_file.name,])
 
 		p = Popen(['hmmsearch',] + args + ['--tformat', 'fasta', 
