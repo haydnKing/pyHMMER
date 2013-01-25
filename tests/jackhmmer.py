@@ -17,3 +17,13 @@ class jackHMMER(unittest.TestCase):
 		m = matchfile.load('tests/data/jack_out', seq_, seqdb_)
 
 		self.assertEqual(m, j.matches)
+
+	def test_arguments(self):
+		seq = SeqIO.read('tests/data/jackhmmer_seq.fasta', 'fasta')
+		seqdb = SeqIO.read('tests/data/matchtarget.fasta', 'fasta')
+
+		j = HMMER.jackhmmer(seq, seqdb)
+		args = j.getArgs(max=True, E='something')
+
+		self.assertEqual(args, ['--max', '--E', 'something'])
+		

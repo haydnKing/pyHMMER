@@ -34,7 +34,26 @@ def wrap_hmms(hmms):
 	return [wrap(h, {'name': str(i), 'alpha': h.alph.upper(),}) 
 					for i,h in enumerate(hmms)]
 
-class jackhmmer:
+class hmmertool:
+	"""Class that each tool inherits from"""
+	SWITCHES = []
+	ARGS = []
+	CMD = ''
+
+	def getArgs(self, **kwargs):
+		args = []
+		for k,v in kwargs.iteritems():
+			fmt = "--{}" if (len(k) > 1) else "-{}"
+			if k in self.ARGS:
+				args += [fmt.format(k), str(v)]
+			elif k in self.SWITCHES:
+				args += [fmt.format(k)]
+			else:
+				raise ValueError("Unknown {} argument \'{}\'"
+						.format(self.__class__.__name__, k))
+		return args
+
+class jackhmmer(hmmertool):
 	"""Iteratively seach a protein database with a protein sequence
 
 	Attributes:
@@ -65,14 +84,7 @@ class jackhmmer:
 		if isinstance(seqdb, SeqRecord):
 			seqdb = [seqdb,]
 
-		args = []
-		for k,v in kwargs.iteritems():
-			if k in self.ARGS:
-				args += ["--{}".format(k), v]
-			elif k in self.SWITCHES:
-				args += ['--{}'.format(k)]
-			else:
-				raise ValueError("Unknown jackhmmer argument \'{}\'".format(k))
+		args = self.getArgs(**kwargs)
 
 		#apply unique ids to the targets
 		self.seq = wrap_seqrecords(seq, alpha='AMINO')
@@ -129,15 +141,19 @@ class jackhmmer:
 			m.getTarget().features.append(m.asSeqFeature(mode=mode,type=type))
 
 
-class hmmsearch:
+class hmmsearch(hmmertool):
 	"""Search for an HMM in a database and collect the results"""
-
+	SWITCHES = ['cut_ga','cut_nc','cut_tc','max','nobias','nonull2',
+			'stall','mpi',]
+	ARGS = ['E','T','domE','domT','incE','incT','incdomE','incdomT',
+			'F1','F2','F3','Z','domZ','seed','tformat','cpu',]
+	
 	def __init__(self, hmm = None, targets = None, **kwargs):
 		"""Initialise - search if hmm and targets have been provided"""
 		if hmm and targets:
 			self.search(hmm, targets, **kwargs)
 
-	def search(self, hmm, targets, verbose=False):
+	def search(self, hmm, targets, verbose=False, **kwargs):
 		"""Perform the search
 				hmm: a file name or an HMM object which has been loaded from a file
 				targets: the sequences to search - a fasta filename or one or 
@@ -222,16 +238,22 @@ class hmmsearch:
 		target_file.flush()
 		del ttargets
 
+		args = self.getArgs(**kwargs)
+
 		if verbose:
 			print "Calling hmmsearch..."
 
-		p = Popen(['hmmsearch', '--tformat', 'fasta', 
-			'--domtblout', out_file.name, hmm_file.name, target_file.name,], 
-				stdout=PIPE, stdin=PIPE, stderr=PIPE)
+		print " ".join(['hmmsearch',] + args + ['--tformat', 'fasta', 
+			'--domtblout', out_file.name, hmm_file.name, target_file.name,])
+
+		p = Popen(['hmmsearch',] + args + ['--tformat', 'fasta', 
+			'--domtblout', out_file.name, hmm_file.name, target_file.name,]
+			 , stdout=PIPE, stdin=PIPE, stderr=PIPE)
 		out = p.communicate()
 
+		if p.returncode != 0:
+			raise RuntimeError('hmmsearch returned: ' + out[0])
 
-		#TODO: Check stdout for errors
 		if verbose:
 			print "Reading in matches..."
 
@@ -598,7 +620,7 @@ def test_deps():
 					('hmmstat',		 'HMMER', 'hmmer.janelia.org'), 
 					('jackhmmer',  'HMMER', 'hmmer.janelia.org'), 
 					('phmmer',	   'HMMER', 'hmmer.janelia.org'), 
-					('clustalo',   'Clustal Omega', 'www.clustal.org/omega/'),
+					#('clustalo',   'Clustal Omega', 'www.clustal.org/omega/'),
 				 ]
 	failed = []
 
