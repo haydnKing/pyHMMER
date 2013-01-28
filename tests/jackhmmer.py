@@ -25,5 +25,5 @@ class jackHMMER(unittest.TestCase):
 		j = HMMER.jackhmmer(seq, seqdb)
 		args = j.getArgs(max=True, E='something')
 
-		self.assertEqual(args, ['--max', '--E', 'something'])
+		self.assertEqual(args, ['--max', '-E', 'something'])
 		
