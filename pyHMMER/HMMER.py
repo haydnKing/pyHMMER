@@ -373,170 +373,21 @@ class hmmsearch(hmmertool):
 			except ValueError:
 				pass
 	
-	def chain(self, mingap=0, maxgap=0, minlen=1):
-		"""
-			Extract a chain of in-frame matches
-				mingap: minimum gap between matches (0)
-				maxgap: maximum gap between matches (0)
-				minlen: minimum chain length for reporting (1)
-		"""
-		l = self._get_by_frame('hmm')
-
-		chains = []
-
-		def add_chain(chain):
-			if len(chain) >= minlen:
-				chains.append([m.match for m in chain])
-
-		#for each target
-		for target in l.itervalues():
-			for frame in target:
-				#ignore empty frames
-				if not frame:
-					continue
-				chain = [frame[0],]
-				for m in frame[1:]:
-					dist = chain[-1].dist(m)
-					#add m to the chain if it's within range
-					if dist >= mingap and dist <= maxgap:
-						chain.append(m)
-					#or if m is too far away, start a new chain
-					elif dist > maxgap:
-						#add chain to chains if it's long enough
-						add_chain(chain)
-						#start a new chain
-						chain = [m,]
-					#ignore matches that are too close
-
-				add_chain(chain)
-
-		return chains
+	def getFeatures(self, target, mode='hmm'):
+		"""Return a list of feature found in a specific target"""
+		ret = []
+		for match in self.matches:
+			if match.target == target:
+				ret.append(match.asSeqFeature(mode=mode))
+		return ret
 
 	def annotate(self, targets, mode='hmm'):
 		"""Annotate a target or list of targets given in target"""
 		if isinstance(targets, SeqRecord):
 			targets = [targets,]
 
-		for match in self.matches:
-			if match.target in targets:
-				match.target.features.append(match.asSeqFeature(mode=mode))
-
-	def getProteins(self, **kwargs):
-		#prepare the arguments
-		chain_args = kwargs.copy()
-		for p in ['max_5_prime', 'max_3_prime', 'mode']:
-			try:
-				chain_args.pop(p)
-			except KeyError:
-				pass
-		prot_args = kwargs.copy()
-		for p in ['mingap', 'maxgap', 'minlen',]:
-			try:
-				prot_args.pop(p)
-			except KeyError:
-				pass
-		
-
-		chains = self.chain(**chain_args)
-		ret = []
-		for c in chains:
-			p = self.getProtein(c, **prot_args)
-			if p:
-				ret.append(p)
-
-		return ret
-					
-	def getProtein(self, chain, mode='hmm', max_5_prime=None, max_3_prime=None):
-		"""
-			Extract the sequence of the chain, extending backwards to the start codon
-			and forwards to the stop codon
-			All matches in the chain must have the same target, be in the same 
-			frame and the target must be a DNA alphabet
-		"""
-		if not chain:
-			return Seq('')
-
-		#sort the chain by start point
-		chain.sort(key=lambda m: m.getFrameSpan(mode)[0])
-
-		target = chain[0].target
-		query = chain[0].query
-		frame = chain[0].frame
-		start = chain[0].getTargetSpan(mode)[0]
-		end = chain[-1].getTargetSpan(mode)[1]
-
-		if frame == 0:
-			frame = 1
-		if frame > 0:
-			step = +3
-			fwd = +1
-		elif frame < 0:
-			step = -3
-			fwd = -1
-
-		prot = [start, end]
-		#move back until we find a start codon
-		while True:
-			if frame > 0:
-				codon = str(target.seq[prot[0]:prot[0]+step]).upper()
-			else:
-				codon = str(
-						target.seq[prot[0]+step:prot[0]].reverse_complement()).upper()
-			if codon == 'ATG':
-				break
-			prot[0] = prot[0] - step
-			if prot[0] < 0 or prot[0] > len(target.seq):
-				prot[0] = prot[0] + step
-				break
-
-		#move end forward until we meet a stop
-		while True:
-			if frame > 0:
-				codon = str(target.seq[prot[1]:prot[1]+step]).upper()
-			else:
-				codon = str(
-						target.seq[prot[1]+step:prot[1]].reverse_complement()).upper()
-			if codon in ['TAG', 'TAA', 'TGA',]:
-				prot[1] = prot[1] + step
-				break
-			prot[1] = prot[1] + step
-			if prot[1] < 0 or prot[1] > len(target.seq):
-				prot[1] = prot[1] - step
-				break
-
-		#check if the 5' and 3' ends are within the limits
-		if max_5_prime and max_5_prime < abs(start - prot[0]):
-			return None
-		if max_3_prime and max_3_prime < abs(end - prot[1]):
-			return None
-
-		if frame < 0:
-			seq = target.seq[prot[1]:prot[0]].reverse_complement()
-			s_loc = FeatureLocation(prot[0], prot[1], strand=-1)
-		else:
-			seq = target.seq[prot[0]:prot[1]]
-			s_loc = FeatureLocation(prot[0], prot[1], strand=1)
-
-		seq_type = sequtils.seq_type(str(seq))
-		if seq_type == 'DNA':
-			seq.alphabet = IUPAC.ambiguous_dna
-		elif seq_type == 'RNA':
-			seq.alphabet = IUPAC.ambiguous_rna
-		elif seq_type == 'AMINO':
-			seq.alphabet = IUPAC.protein
-
-		#Create the features
-		feats = []
-		for m in chain:
-			feats.append(m.asSeqFeature(mode=mode, offset=prot[0]))
-			
-		return SeqRecord(seq, name=query.name, 
-				description="{} containing protein".format(query.name), 
-				features=feats,
-				annotations={'source': target,
-										 'sourceloc': s_loc,})
-
-
+		for t in targets:
+			t.features.extend(self.getFeatures(t))
 
 	class _minimatch:
 		def __init__(self, m, mode='hmm'):
