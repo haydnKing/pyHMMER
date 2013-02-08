@@ -251,7 +251,7 @@ class hmmsearch(hmmertool):
 		out = p.communicate()
 
 		if p.returncode != 0:
-			raise RuntimeError('hmmsearch returned: ' + out[0])
+			raise RuntimeError('hmmsearch returned: ' + out[1])
 
 		if verbose:
 			print "Reading in matches..."
