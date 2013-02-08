@@ -345,7 +345,6 @@ class TestHMMBuild(unittest.TestCase):
 
 		hmmfile.write(hmm, s)
 
-		print s.getvalue()
 		s.seek(0)
 		hmm2 = hmmfile.read(s)[0]
 
@@ -353,13 +352,23 @@ class TestHMMBuild(unittest.TestCase):
 			if hasattr(hmm, o):
 				self.assertEqual(getattr(hmm, o), getattr(hmm2, o))
 
-		for e,g in zip(hmm.states, hmm2.states):
-			self.assertEqual(e.me, g.me)
-			self.assertEqual(e.ie, g.ie)
-			self.assertEqual(e.tr, g.tr)
-			self.assertEqual(e.map,g.map)
-			self.assertEqual(e.rf, g.rf)
-			self.assertEqual(e.cs, g.cs)
+		def r(l):
+			ret = []
+			for i in l:
+				if type(i) == float:
+					ret.append(round(i,5))
+				else:
+					ret.append(i)
+			return ret
+
+		for i,(e,g) in enumerate(zip(hmm.states, hmm2.states)):
+			msg = "State {}: {} != {}"
+			self.assertEqual(r(e.me), g.me, msg.format(i,e.me,g.me))
+			self.assertEqual(r(e.ie), g.ie, msg.format(i,e.ie,g.ie))
+			self.assertEqual(r(e.tr), g.tr, msg.format(i,e.tr,g.tr))
+			self.assertEqual(e.map,g.map, msg.format(i,e.map,g.map))
+			self.assertEqual(e.rf, g.rf, msg.format(i,e.rf,g.rf))
+			self.assertEqual(e.cs, g.cs, msg.format(i,e.cs,g.cs))
 
 
 	def test_blank(self):

@@ -402,7 +402,12 @@ def write(hmms, f):
 	for hmm in hmms:
 		f.write('HMMER3/b [pyHMMER | 2012]\n')
 		#write header
-		for o in ['NAME', 'ACC', 'DESC', 'LENG', 'ALPH', 'DATE', 'NSEQ', 'EFFN',
+
+		f.write('{:<5s} {}\n'.format('NAME', hmm.name if hmm.name else 
+			"<Untitled HMM>"))
+		f.write('{:<5s} {}\n'.format('LENG', len(hmm.states) - 1))
+		
+		for o in ['ACC', 'DESC', 'ALPH', 'DATE', 'NSEQ', 'EFFN',
 				'CKSUM',]:
 			try:
 				f.write('{:<5s} {}\n'.format(o, getattr(hmm, o.lower())))
@@ -536,6 +541,8 @@ class HMM:
 		last states - call this after the model is built"""
 		#State0: (DM, DD) = (1, 0)
 		self.states[0].tr[5:7] = [0.0, '*',]
+		#State0 is mute
+		self.states[0].me = []
 
 		#FinalState: (DM, DD) = (1, 0)
 		s = self.states[-1]
