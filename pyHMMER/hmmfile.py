@@ -564,6 +564,9 @@ class HMM:
 
 			CS: Consensus Structure annotation for this node
 		"""
+		#print ("{{\n\"transition\"={},\n\"emission\"={},\n\"insert_emission\"={},\n"
+		#	+ "\"MAP\"={},\n\"CS\"=\"{}\",\n\"RF\"=\"{}\"\n}},").format(transition, emission,
+		#		insert_emission, MAP, CS, RF)
 		
 		#defaults
 		if not transition:

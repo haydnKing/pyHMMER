@@ -1,4 +1,5 @@
 from pyHMMER import hmmfile
+from StringIO import StringIO
 import unittest
 
 class TestHMMRead(unittest.TestCase):
@@ -151,6 +152,169 @@ class TestHMMReadWrite(unittest.TestCase):
 			self.assertEqual(s.rf, s2.rf)
 			self.assertEqual(s.cs, s2.cs)
 
+build_data = [{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':4},
+		"emission":{'A': 9, 'C': 2, 'T': 4, 'G': 27},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 1, 'C': 1, 'T': 1, 'G': 1},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 0, 'C': 0, 'T': 0, 'G': 3},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 1, 'C': 1, 'T': 1, 'G': 1},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 2, 'C': 0, 'T': 0, 'G': 0},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 7, 'C': 22, 'T': 68, 'G': 7},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 6, 'C': 46, 'T': 31, 'G': 3},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 6, 'C': 46, 'T': 31, 'G': 3},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 6, 'C': 46, 'T': 31, 'G': 3},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 1, 'C': 12, 'T': 3, 'G': 0},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 0, 'C': 5, 'T': 3, 'G': 0},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 6, 'C': 46, 'T': 31, 'G': 3},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 1, 'C': 1, 'T': 1, 'G': 1},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{		
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 0, 'C': 0, 'T': 3, 'G': 0},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 7, 'C': 22, 'T': 68, 'G': 7},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 1, 'C': 1, 'T': 1, 'G': 1},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 0, 'C': 5, 'T': 3, 'G': 0},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+	{
+		"transition":{'MD': 0, 'DM': 1, 'MM': 7, 'DD': 0, 'MI': 1, 'II': 6, 'IM':
+			4},
+		"emission":{'A': 0, 'C': 0, 'T': 2, 'G': 0},
+		"insert_emission":None,
+		"MAP":-1,
+		"CS":"-",
+		"RF":"-"
+		},
+]
+
 class TestHMMBuild(unittest.TestCase):
 
 	em = {'a':2, 'C':1, 'D':1,}
@@ -165,29 +329,38 @@ class TestHMMBuild(unittest.TestCase):
 					[1.0/3,2.0/3,0,0.2,0.8,1,0,],]
 	
 	def test_build(self):
-		hmm = hmmfile.HMM(alphabet='AMINO')
+		hmm = hmmfile.HMM(alphabet='DNA')
 
 		#build the HMM
-		for i in range(3):
-			hmm.addState(transition=self.tr, emission=self.em,
-					insert_emission=self.iem)
+		for i in build_data:
+			hmm.addState(**i)
 		hmm.clean()
 
-		#there are 3 states
-		self.assertEqual(len(hmm.states), 3, 
-			"{} states built - should be 3".format(len(hmm.states)))
+		#there are the correct number of states
+		self.assertEqual(len(hmm.states), len(build_data), 
+			"{} states built - should be {}".format(len(hmm.states),
+				len(build_data)))
 
-		#test each state
-		for i,s in enumerate(hmm.states):
-			self.assertEqual(hmmfile.expodds(s.me), self.e_em, 
-					"Match emissions don't match for {}: got\n{} expected\n{}"
-					.format(i,hmmfile.expodds(s.me), self.e_em))
-			self.assertEqual(hmmfile.expodds(s.ie), self.e_iem,
-					"Insert emissions don't match for {}: got\n{} expected\n{}"
-					.format(i,hmmfile.expodds(s.ie), self.e_iem))
-			self.assertEqual(hmmfile.expodds(s.tr), self.e_tr[i],
-					"State transitions don't match for {}: got\n{} expected \n{}"
-					.format(i,hmmfile.expodds(s.tr), self.e_tr[i]))
+		s = StringIO()
+
+		hmmfile.write(hmm, s)
+
+		print s.getvalue()
+		s.seek(0)
+		hmm2 = hmmfile.read(s)[0]
+
+		for o in hmmfile.OPTIONS:
+			if hasattr(hmm, o):
+				self.assertEqual(getattr(hmm, o), getattr(hmm2, o))
+
+		for e,g in zip(hmm.states, hmm2.states):
+			self.assertEqual(e.me, g.me)
+			self.assertEqual(e.ie, g.ie)
+			self.assertEqual(e.tr, g.tr)
+			self.assertEqual(e.map,g.map)
+			self.assertEqual(e.rf, g.rf)
+			self.assertEqual(e.cs, g.cs)
+
 
 	def test_blank(self):
 		hmm = hmmfile.HMM(alphabet = 'DNA')
