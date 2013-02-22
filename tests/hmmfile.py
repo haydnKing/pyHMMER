@@ -10,6 +10,10 @@ class TestHMMRead(unittest.TestCase):
 	def test_name(self):
 		self.assertEqual(self.hmm.name, 'PPR_1')
 
+	def test_str(self):
+		self.assertEqual(str(self.hmm), 
+			'HMM with 35 states.\n\tWWDWWWWDWEWWDWWWDWWWWPCCWWPCWDWPDW')
+
 	def test_acc(self):
 		self.assertEqual(self.hmm.acc, 'PF12854.2')
 
@@ -21,6 +25,7 @@ class TestHMMRead(unittest.TestCase):
 
 	def test_alph(self):
 		self.assertEqual(self.hmm.alph.lower(), 'amino')
+		self.assertEqual(self.hmm.alpha.lower(), 'amino')
 
 	def test_rf(self):
 		self.assertFalse(self.hmm.rf)

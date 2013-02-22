@@ -206,6 +206,7 @@ class HMMParser:
 						if hmm.alph.upper() in ALPHABETS:
 							hmm.symbols = ALPHABETS[hmm.alph.upper()]
 							hmm.K = len(hmm.symbols)
+							hmm.alpha = hmm.alph.upper()
 						else:
 							self._addError('ALPH must be \'DNA\', \'RNA\' or \'AMINO\'')
 							continue
@@ -673,6 +674,17 @@ class HMM:
 
 	def __nonzero__(self):
 		return True
+
+	def __unicode__(self):
+		s = "HMM with {} {}.\n\t".format(len(self.states), 
+				"states" if len(self.states)>1 else "state")
+		for state in self.states:
+			if state.me:
+				s += ALPHABETS[self.alpha][state.me.index(max(state.me))]
+		return s
+
+	def __str__(self):
+		return self.__unicode__().encode('utf-8')
 
 def logodds(p):
 	"""Takes a single or an interable of probabilities and returns -log(p)"""
