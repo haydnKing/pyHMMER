@@ -12,7 +12,7 @@ class TestHMMRead(unittest.TestCase):
 
 	def test_str(self):
 		self.assertEqual(str(self.hmm), 
-			'HMM with 35 states.\n\tWWDWWWWDWEWWDWWWDWWWWPCCWWPCWDWPDW')
+			'HMM with 35 states.\n\tKGLKPDVVTYNTLIDGLCRAGRVDEAVELLDEME')
 
 	def test_acc(self):
 		self.assertEqual(self.hmm.acc, 'PF12854.2')

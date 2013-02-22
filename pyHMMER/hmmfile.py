@@ -445,7 +445,7 @@ def write(hmms, f):
 
 		def ff(f, l=9, p=5):
 			try:
-				return ('%'+str(l)+'.'+str(p)+'f') % f
+				return ('%'+str(l)+'.'+str(p)+'f') % abs(f)
 			except TypeError:
 				return ' '*(l-1) + '*'
 		#write CMPO, if it exists. Should probably calculate it...
@@ -680,7 +680,10 @@ class HMM:
 				"states" if len(self.states)>1 else "state")
 		for state in self.states:
 			if state.me:
-				s += ALPHABETS[self.alpha][state.me.index(max(state.me))]
+				if max(state.me) > min(state.me):
+					s += ALPHABETS[self.alpha][state.me.index(min(state.me))]
+				else:
+					s += '-'
 		return s
 
 	def __str__(self):
