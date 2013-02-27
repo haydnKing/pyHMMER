@@ -649,10 +649,10 @@ class HMM:
 				raise ValueError("Value \'{}\' less than zero in {}".format(k,name))
 			if emission.has_key(k.lower()) and emission.has_key(k.upper()):
 				raise ValueError("Duplicate key \'{}\' in {}".format(k,name))
-			i = ALPHABETS[self.alpha].find(k.upper())
+			i = ALPHABETS[self.alpha.upper()].find(k.upper())
 			if i < 0:
 				raise ValueError("Unknown symbol \'{}\' not in alphabet ({}[\'{}\']) when"
-						" parsing {}".format(k,self.alpha, ALPHABETS[self.alpha], name))
+						" parsing {}".format(k,self.alpha, ALPHABETS[self.alpha.upper()], name))
 			r[i] = v
 
 		if sum(r) == 0:
@@ -681,7 +681,7 @@ class HMM:
 		for state in self.states:
 			if state.me:
 				if max(state.me) > min(state.me):
-					s += ALPHABETS[self.alpha][state.me.index(min(state.me))]
+					s += ALPHABETS[self.alpha.upper()][state.me.index(min(state.me))]
 				else:
 					s += '-'
 		return s

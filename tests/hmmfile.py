@@ -334,7 +334,8 @@ class TestHMMBuild(unittest.TestCase):
 					[1.0/3,2.0/3,0,0.2,0.8,1,0,],]
 	
 	def test_build(self):
-		hmm = hmmfile.HMM(alphabet='DNA')
+		#Should be case insensitive
+		hmm = hmmfile.HMM(alphabet='DnA')
 
 		#build the HMM
 		for i in build_data:
