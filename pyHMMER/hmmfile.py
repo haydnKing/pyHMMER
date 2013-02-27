@@ -1,6 +1,8 @@
 """Read and Write HMMER's .hmm format"""
 
-import re, itertools, collections, math
+import re, itertools, collections, math, copy
+from cStringIO import StringIO
+from subprocess import Popen, PIPE, STDOUT
 
 class HMMFileException(Exception):
 	def __init__(self, errors, warnings):
@@ -551,6 +553,54 @@ class HMM:
 		# MD = 0
 		s.tr[2] = '*'
 		s.tr[0:2] = logodds(self._norm(expodds(s.tr[0:2])))
+
+	def calibrate(self):
+		"""Calibrate the model statistics using hmmsim"""
+		self.stats = []
+		#Work around the fact that hmmsim demands an amino alphabet
+		h = copy.deepcopy(self)
+		if self.alpha.upper() != 'AMINO':
+			h.alph = h.alphabet = h.alpha = 'amino'
+			h.K = len(ALPHABETS['AMINO'])
+			l5 = math.log(5)
+			def n(p):
+				try:
+					return p + 5
+				except TypeError:
+					return '*'
+			for state in h.states:
+				#ATGC expanded to fill 1/4 of the amino space each, normalizing so that
+				#they still sum to one 
+				if state.me:
+					state.me = (
+							[n(state.me[0])] * 5 +
+							[n(state.me[1])] * 5 +
+							[n(state.me[2])] * 5 + 
+							[n(state.me[3])] * 5)
+				state.ie = (
+						[n(state.ie[0])] * 5 +
+						[n(state.ie[1])] * 5 +
+						[n(state.ie[2])] * 5 + 
+						[n(state.ie[3])] * 5)
+
+		s = StringIO()
+		write(h,s)
+		s = s.getvalue()
+
+		#Call hmmsim 3 times
+		for switch,stat in [('--vit', 'VITERBI'), ('--fwd', 'FORWARD'), 
+				('--msv', 'MSV')]:
+			p = Popen(['hmmsim',switch,'-',], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+			(stdout, stderr) = p.communicate(s)
+			if p.returncode != 0:
+				raise RuntimeError('hmmsim error: ' + stderr)
+
+			for line in stdout.split('\n'):
+				if len(line.strip()) <= 0 or line.strip()[0] == '#':
+					continue
+				l = line.split()
+				self.stats.append(('LOCAL', stat, float(l[2]), float(l[3])))
+
 	
 	def addState(self, transition = None, emission = None, insert_emission = None,
 								MAP=-1, CS='-', RF='-'):

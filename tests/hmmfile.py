@@ -376,6 +376,29 @@ class TestHMMBuild(unittest.TestCase):
 			self.assertEqual(e.rf, g.rf, msg.format(i,e.rf,g.rf))
 			self.assertEqual(e.cs, g.cs, msg.format(i,e.cs,g.cs))
 
+	def test_calibrate(self):
+		#Should be case insensitive
+		hmm = hmmfile.HMM(alphabet='DnA')
+
+		#build the HMM
+		for i in build_data:
+			hmm.addState(**i)
+		hmm.clean()
+		self.assertEqual(hmm.stats, [])
+		hmm.calibrate()
+
+		self.assertEqual(len(hmm.stats), 3)
+		self.assertNotEqual(hmm.stats[0][1], hmm.stats[1][1])
+		self.assertNotEqual(hmm.stats[0][1], hmm.stats[2][1])
+		self.assertNotEqual(hmm.stats[1][1], hmm.stats[2][1])
+		for s in hmm.stats:
+			self.assertEqual(len(s), 4)
+			self.assertEqual(s[0], 'LOCAL')
+			self.assertIn(s[1], ['VITERBI', 'FORWARD', 'MSV'])
+			self.assertIsInstance(s[2], float)
+			self.assertTrue(s[2] < 0)
+			self.assertIsInstance(s[3], float)
+			self.assertTrue(s[3] > 0)
 
 	def test_blank(self):
 		hmm = hmmfile.HMM(alphabet = 'DNA')
