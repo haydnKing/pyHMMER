@@ -720,7 +720,7 @@ class HMM:
 		return r
 
 	def __len__(self):
-		return self.leng
+		return max(len(self.states) - 1, 0)
 
 	def __nonzero__(self):
 		return True

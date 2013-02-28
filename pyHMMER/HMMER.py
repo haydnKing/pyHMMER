@@ -21,9 +21,15 @@ class wrap(object):
 		self.overrides = overrides
 
 	def __getattr__(self, item):
+		#if the item starts with an underscore, return the unwrapped version
+		if item[0] == '_' and self.overrides.has_key(item[1:]):
+			return getattr(self.wrapped, item[1:])
 		if self.overrides.has_key(item):
 			return self.overrides[item]
 		return getattr(self.wrapped, item)
+
+	def __len__(self):
+		return len(self.wrapped)
 
 def wrap_seqrecords(records, alpha = None):
 	return [wrap(r, {'id': str(i), 
@@ -440,10 +446,18 @@ class hmmsearch(hmmertool):
 		return r
 
 	def __unicode__(self):
-		ret = "Found {:d} matches\n".format(len(self.matches))
+		ret = "hmmsearch:\n\t{}:\n".format(
+				"Query" if len(self.hmm)==1 else "Queries")
+		for i,hmm in enumerate(self.hmm,1):
+			ret += "\t\t{}) {} [{} nodes]\n,".format(i,hmm._name,len(hmm))
+		ret += "\t{}:\n".format("Target" if len(self.targets)==1 else "Target")
+		for i,t in enumerate(self.targets,1):
+			ret += "\t\t{}) \'{}\': {}\n".format(i,t.name,t.seq)
+		ret += "\nFound {:d} matches:\n".format(len(self.matches))
+		
 		if self.matches:
-			for m in self.matches:
-				ret += str(m) + '\n'
+			for i,m in enumerate(self.matches,1):
+				ret += "{})\n{}\n".format(i, m)
 		return ret
 
 	def __str__(self):

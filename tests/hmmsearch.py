@@ -10,6 +10,7 @@ class Testhmmsearch(unittest.TestCase):
 		h = HMMER.hmmsearch('tests/data/valid.hmm', 'tests/data/matchtarget.fasta')
 		self.assertEqual(len(h.matches), 17)
 		check_valid(self, h.matches)
+		s = str(h)
 
 	def test_translation_search(self):
 		h = HMMER.hmmsearch('tests/data/valid.hmm', 
@@ -17,6 +18,7 @@ class Testhmmsearch(unittest.TestCase):
 		self.assertEqual(len(h.matches), 17)
 		s = sequtils.translate(str(h.matches[0].getSequence()))
 		self.assertEqual(s, hmm_seq)
+		s = str(h)
 
 class TestAnnotation(unittest.TestCase):
 
