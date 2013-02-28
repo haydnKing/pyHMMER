@@ -4,7 +4,7 @@ from Bio import SeqIO
 
 
 hmm_seq = "SCEAGFGGESLKLQSGFHEIKGLEDAIDLFSDML"
-ali_seq = "LEDAIDLFSD"
+ali_seq = "LEDAIDLFSDM"
 
 test_data = {
 	't_name': ['0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0','0',],
@@ -36,12 +36,12 @@ test_data = {
 def check_valid(self, matches):
 	for i,m in enumerate(matches):
 		for k in test_data.iterkeys():
-			if re.search(r"_to$|_from$", k):
+			if re.search(r"_from$", k):
 				v = getattr(m,k) + 1
 			else:
 				v = getattr(m,k)
-			self.assertEqual(v, test_data[k][i], msg=
-				"matches[{}].{} = {} != {}".format(i,k,getattr(m,k),test_data[k][i]))
+			self.assertEqual(test_data[k][i], v, msg=
+				"matches[{}].{} = {} != {}".format(i,k,v,test_data[k][i]))
 
 
 class TestMatchRead(unittest.TestCase):

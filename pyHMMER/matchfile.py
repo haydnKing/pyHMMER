@@ -255,7 +255,7 @@ def save(matches, f):
 		o_ = dict()
 		for fmt in format_list:
 			v = getattr(o, fmt['name'])
-			if re.search(r"_from$|_to$", fmt['name']):
+			if re.search(r"_from$", fmt['name']):
 				v = int(v) + 1
 			o_[fmt['name']] = v
 		out.append(o_)
@@ -307,7 +307,7 @@ def load(f, queries, targets):
 			if fmt['type'] in ['f','g',]:
 				setattr(match, fmt['name'], float(v))
 			elif fmt['type'] == 'd':
-				if re.search(r"_from$|_to$", fmt['name']):
+				if re.search(r"_from$", fmt['name']):
 					v = int(v) - 1
 				setattr(match, fmt['name'], int(v))
 			else:
