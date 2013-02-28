@@ -449,7 +449,7 @@ class hmmsearch(hmmertool):
 		ret = "hmmsearch:\n\t{}:\n".format(
 				"Query" if len(self.hmm)==1 else "Queries")
 		for i,hmm in enumerate(self.hmm,1):
-			ret += "\t\t{}) {} [{} nodes]\n,".format(i,hmm._name,len(hmm))
+			ret += "\t\t{}) {} [{} nodes],\n".format(i,hmm._name,len(hmm))
 		ret += "\t{}:\n".format("Target" if len(self.targets)==1 else "Target")
 		for i,t in enumerate(self.targets,1):
 			ret += "\t\t{}) \'{}\': {}\n".format(i,t.name,t.seq)
@@ -457,7 +457,7 @@ class hmmsearch(hmmertool):
 		
 		if self.matches:
 			for i,m in enumerate(self.matches,1):
-				ret += "{})\n{}\n".format(i, m)
+				ret += "{})  {}\n".format(i, m)
 		return ret
 
 	def __str__(self):
