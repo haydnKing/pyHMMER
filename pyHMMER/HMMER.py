@@ -446,13 +446,18 @@ class hmmsearch(hmmertool):
 		return r
 
 	def __unicode__(self):
+		def _seq(seq):
+			if len(seq) < 60:
+				return seq
+			return "{} ... {}".format(seq[0:25], seq[-25:-1])
+
 		ret = "hmmsearch:\n\t{}:\n".format(
 				"Query" if len(self.hmm)==1 else "Queries")
 		for i,hmm in enumerate(self.hmm,1):
 			ret += "\t\t{}) {} [{} nodes],\n".format(i,hmm._name,len(hmm))
 		ret += "\t{}:\n".format("Target" if len(self.targets)==1 else "Target")
 		for i,t in enumerate(self.targets,1):
-			ret += "\t\t{}) \'{}\': {}\n".format(i,t.name,t.seq)
+			ret += "\t\t{}) \'{}\': {}\n".format(i,t.name,_seq(t.seq))
 		ret += "\nFound {:d} matches:\n".format(len(self.matches))
 		
 		if self.matches:
