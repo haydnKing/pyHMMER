@@ -25,7 +25,7 @@ class TestConversion(unittest.TestCase):
 
 	def test_sixFrame(self):
 		c = sequtils.sixFrameTranslation(test)
-		self.assertEqual(c, six_frame)
+		self.assertEqual(tuple(c), six_frame)
 
 	def test_minLength(self):
 		self.assertRaises(ValueError, sequtils.translate, 'aa')
@@ -33,7 +33,8 @@ class TestConversion(unittest.TestCase):
 
 	def test_invalidChar(self):
 		self.assertRaises(ValueError, sequtils.translate, 'aaaaaf')
-		self.assertRaises(ValueError, sequtils.sixFrameTranslation, 'aaaaaajk')
+		c = sequtils.sixFrameTranslation('aaaaaaaaaaajk')
+		self.assertRaises(ValueError, c.next)
 
 	
 class TestItentification(unittest.TestCase):

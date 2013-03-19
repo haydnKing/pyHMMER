@@ -251,11 +251,84 @@ translate(PyObject *self, PyObject *args)
     return Py_BuildValue("s", oseq);
 }
 
-static PyObject *
-sixFrameTranslation(PyObject *self, PyObject *args)
+/*
+ * sixFrameTranslation: iterator to return the translations one by one
+ *
+ */
+
+typedef struct {
+    PyObject_HEAD
+    int pos;
+    int ilen;
+    const char* iseq;
+} sequtils_SFT;
+
+int SFT_frames[] = {1,2,3,-1,-2,-3};
+
+/*
+ * __iter__: returns self
+ */
+PyObject* sequtils_SFT_iter(PyObject *self)
+{
+    Py_INCREF(self);
+    return self;
+}
+
+PyObject* sequtils_SFT_iternext(PyObject *self)
+{
+    sequtils_SFT *p = (sequtils_SFT *)self;
+    if (p->pos < 6) {
+        char* oseq = _translate(p->iseq, p->ilen, SFT_frames[p->pos]);
+        (p->pos)++;
+        if(oseq == NULL)
+            return NULL;
+        return Py_BuildValue("s", oseq);
+    } else {
+        /* Raising of standard StopIteration
+         * exception with empty value. */
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
+}
+
+static PyTypeObject sequtils_SFTType = {
+    PyObject_HEAD_INIT(NULL)
+        0,                         /*ob_size*/
+    "sequtils._SFT",            /*tp_name*/
+    sizeof(sequtils_SFT),       /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    0,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_ITER,
+    /* tp_flags: Py_TPFLAGS_HAVE_ITER tells python 
+     * to use tp_iter and tp_iternext fields. */
+    "Internal SFT iterator object.",           /* tp_doc */
+    0,  /* tp_traverse */
+    0,  /* tp_clear */
+    0,  /* tp_richcompare */
+    0,  /* tp_weaklistoffset */
+    sequtils_SFT_iter,  /* tp_iter: __iter__() method */
+    sequtils_SFT_iternext  /* tp_iternext: next() method */
+};
+
+PyObject * sixFrameTranslation(PyObject *self, PyObject *args)
 {
     const char * iseq = NULL;
     unsigned int ilen = 0;
+    sequtils_SFT *p;
 
     if(!PyArg_ParseTuple(args, "s#:sixFrameTranslation", &iseq, &ilen))
     {
@@ -268,31 +341,22 @@ sixFrameTranslation(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    char ** oseq = malloc(6 * sizeof(char*));
+    /* I don't need python callable __init__() method for this iterator,
+     *      so I'll simply allocate it as PyObject and initialize it by hand. */
 
-    int i,j;
-    for(i=0; i<3;i++)
-    {
-        oseq[i] = _translate(iseq,ilen,i+1);
-        if(oseq[i] == NULL){
-            for(j = 0; j < i; j++)
-                free(oseq[j]);
-            return NULL;
-        }
-    }
-    for(i=0; i<3;i++)
-    {
-        oseq[i+3] = _translate(iseq,ilen,-i-1);
-        if(oseq[i+3] == NULL){
-            for(j = 0; j < i+3; j++)
-                free(oseq[j]);
-            return NULL;
-        }
+    p = PyObject_New(sequtils_SFT, &sequtils_SFTType);
+    if (!p) return NULL;
+
+    /* I'm not sure if it's strictly necessary. */
+    if (!PyObject_Init((PyObject *)p, &sequtils_SFTType)) {
+        Py_DECREF(p);
+        return NULL;
     }
 
-    return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], 
-                                oseq[3], oseq[4], oseq[5]);
-
+    p->pos = 0;
+    p->iseq = iseq;
+    p->ilen = ilen;
+    return (PyObject *)p;
 }
 
 static PyObject *
@@ -395,7 +459,7 @@ module_functions[] = {
     { "translate", translate, METH_VARARGS, 
         "Convert a DNA sequence to its (+1 frame) Amino Acid sequence" },
     { "sixFrameTranslation", sixFrameTranslation, METH_VARARGS, 
-        "Convert a DNA sequence to its six possible Amino Acid sequences" },
+        "Return an iterator to the six possible Amino Acid sequences" },
     { NULL }
 };
 
@@ -404,6 +468,14 @@ module_functions[] = {
 void
 initsequtils(void)
 {
-    Py_InitModule3("sequtils", module_functions, 
+    PyObject* m;
+
+    sequtils_SFTType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&sequtils_SFTType) < 0)  return;
+
+    m = Py_InitModule3("sequtils", module_functions, 
         "Various sequence tools");
+
+    Py_INCREF(&sequtils_SFTType);
+    PyModule_AddObject(m, "_MyIter", (PyObject *)&sequtils_SFTType);
 }
