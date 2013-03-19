@@ -3,7 +3,7 @@
 #include "Python.h"
 
 #include <stdio.h>
-
+#include <math.h>
 
 //Translation Table
 const char DNA2AMINO[] = {
@@ -138,6 +138,20 @@ inline int baseAsInt(char base, unsigned int* out)
     return 0;
 }
 
+char intAsBase(int in){
+    switch(in){
+        case 0:
+            return 't';
+        case 1:
+            return 'c';
+        case 2:
+            return 'a';
+        case 3:
+            return 'g';
+    }
+    return 'x';
+}
+
 void clear(char** oseq)
 {
     unsigned int i;
@@ -177,6 +191,40 @@ void unknown_base(char base, unsigned int position)
     PyErr_SetString(PyExc_ValueError, err);
 }
 
+char* _translate(const char* iseq, int ilen, int frame){
+
+    int fwd = (frame > 0);
+    frame = abs(frame) - 1;
+
+    unsigned int olen = (ilen - frame) / 3;
+    unsigned int i, j;
+
+    char * oseq = malloc(olen * sizeof(char)+1);
+    oseq[olen] = '\0';
+
+    unsigned int tmp[] = {0,0,0};
+
+    int di = fwd ? 1 : -1;
+    int offset = fwd ? 0 : ilen-1;
+
+    for(i = frame; i < ilen-2; i+=3)
+    {
+        for(j = 0; j < 3; j++){
+            if(!baseAsInt(iseq[offset + di*(i+j)], tmp+j))
+            {
+                unknown_base(iseq[offset + di*(i+j)], i);
+                free(oseq);
+                return NULL;
+            }
+            if(fwd==0)
+                tmp[j] = (tmp[j]+2)%4;
+        }
+        translate_codon(tmp[0],tmp[1],tmp[2], oseq + i/3);
+    }
+
+    return oseq;
+}
+
 static PyObject *
 translate(PyObject *self, PyObject *args)
 {
@@ -194,38 +242,10 @@ translate(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    unsigned int olen = ilen / 3;
-    unsigned int i;
+    char* oseq = _translate(iseq, ilen, 1);
 
-    char * oseq = malloc(olen * sizeof(char)+1);
-    oseq[olen] = '\0';
-
-    unsigned int a = 0, b = 0, c = 0;
-    
-
-    for(i = 0; i < ilen-2; i+=3)
-    {
-        if(!baseAsInt(iseq[i], &a))
-        {
-            unknown_base(iseq[i], i);
-            free(oseq);
-            return NULL;
-        }
-        if(!baseAsInt(iseq[i + 1], &b))
-        {
-            unknown_base(iseq[i+1], i+1);
-            free(oseq);
-            return NULL;
-        }
-        if(!baseAsInt(iseq[i + 2], &c))
-        {
-            unknown_base(iseq[i+2], i+2);
-            free(oseq);
-            return NULL;
-        }
-
-        translate_codon(a, b, c, oseq + i/3);
-
+    if(oseq == NULL){
+        return NULL;
     }
 
     return Py_BuildValue("s", oseq);
@@ -248,83 +268,31 @@ sixFrameTranslation(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    unsigned int olen = ilen / 3;
-    unsigned int i;
-
     char ** oseq = malloc(6 * sizeof(char*));
 
-    for(i = 0; i < 6; i++)
+    int i,j;
+    for(i=0; i<3;i++)
     {
-        oseq[i] = malloc(olen * sizeof(char) + 1);
-        oseq[i][olen] = '\0';
-    }
-
-
-    //perform the translations
-    unsigned int f = 0, j = 0;
-    unsigned int a = 0, b = 0, c = 0;
-    if(!baseAsInt(iseq[0], &a))
-    {
-        unknown_base(iseq[0], 0);
-        clear(oseq);
-        return NULL;
-    }
-    if(!baseAsInt(iseq[1], &b))
-    {
-        unknown_base(iseq[1], 1);
-        clear(oseq);
-        return NULL;
-    }
-
-    for(i = 0; i < ilen-2; i++)
-    {
-        if(!baseAsInt(iseq[i + 2], &c))
-        {
-            unknown_base(iseq[i+2], i+2);
-            clear(oseq);
+        oseq[i] = _translate(iseq,ilen,i+1);
+        if(oseq[i] == NULL){
+            for(j = 0; j < i; j++)
+                free(oseq[j]);
             return NULL;
         }
-        //forward frame
-        translate_codon(a, b, c, oseq[f] + j);
-        //reverse frame
-        translate_codon((c+2)%4, (b+2)%4, (a+2)%4, oseq[f+3] + j);
-
-        f++;
-        if(f >= 3)
-        {
-            f = 0;
-            j++;
+    }
+    for(i=0; i<3;i++)
+    {
+        oseq[i+3] = _translate(iseq,ilen,-i-1);
+        if(oseq[i+3] == NULL){
+            for(j = 0; j < i+3; j++)
+                free(oseq[j]);
+            return NULL;
         }
-
-        a = b;
-        b = c;
     }
 
-    //make sure the terminating nulls are in the right place
-    for(f = 0; f < 3; f++)
-    {
-        oseq[f  ][(ilen-f)/3] = '\0';
-        oseq[f+3][(ilen-f)/3] = '\0';
-    }
+    return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], 
+                                oseq[3], oseq[4], oseq[5]);
 
-    //reverse the direction of the three reverse frames
-    reverse(oseq[3], olen);
-    reverse(oseq[4], (ilen-1)/3);
-    reverse(oseq[5], (ilen-2)/3);
-
-    switch(ilen % 3)
-    {
-        case 0:
-            return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], 
-                                oseq[3], oseq[5], oseq[4]);
-        case 1:
-            return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], 
-                                oseq[4], oseq[3], oseq[5]);
-        case 2:
-            return Py_BuildValue("ssssss", oseq[0], oseq[1], oseq[2], 
-                                oseq[5], oseq[4], oseq[3]);
-    }
-    return NULL;
 }
 
 static PyObject *

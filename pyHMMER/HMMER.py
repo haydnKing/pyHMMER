@@ -159,7 +159,7 @@ class hmmsearch(hmmertool):
 		if hmm and targets:
 			self.search(hmm, targets, **kwargs)
 
-	def search(self, hmm, targets, verbose=False, **kwargs):
+	def search(self, hmm, targets, **kwargs):
 		"""Perform the search
 				hmm: a file name or an HMM object which has been loaded from a file
 				targets: the sequences to search - a fasta filename or one or 
@@ -169,8 +169,7 @@ class hmmsearch(hmmertool):
 				DNA sequences, 6-frame translations will be produced automatically
 				Reverse translations (from Amino Acid to DNA) are not supported
 		"""
-		if verbose:
-			print "Searching..."
+
 		# Load the HMM(s)
 		if not hasattr(hmm, "__iter__"):
 			hmm = [hmm,]
@@ -195,9 +194,6 @@ class hmmsearch(hmmertool):
 					self.targets.append(req)
 			else:
 				self.targets.append(t)
-		
-		if verbose:
-			print "Loading HMMs and Targets..."
 
 		#apply unique ids
 		self.targets = wrap_seqrecords(self.targets) 
@@ -209,47 +205,41 @@ class hmmsearch(hmmertool):
 			if h.alph.upper() != hmm_alpha:
 				raise ValueError("The HMMs don't all have the same alphabet")
 
+		#get the arguments for HMMER
+		args = self.getArgs(**kwargs)
+		#clear the matches
+		self.matches = []
+
 		#Translate targets if necessary
 		for t in self.targets:
 			t_alpha = sequtils.seq_type(str(t.seq))
 			
 			#if target and hmms have same alphabet
 			if hmm_alpha == t_alpha:
-					ttargets.append(t)
+					self._do_search(self.hmm, [t,], args)
 			#else try translating
 			else:
 				if hmm_alpha == "AMINO" and t_alpha == "DNA":
-					try:
-						#looks like we might have to convert
-						ttargets = ttargets + tools.getSixFrameTranslation(t)
-					except ValueError:
-						#probably was a protein after all
-						ttargets.append(t)
+					#looks like we have to convert
+					tt =  tools.getSixFrameTranslation(t)
+					self._do_search(self.hmm, tt, args)
 				else:
 					raise ValueError('Unknown Translation \'{}\' to \'{}\''
 							.format(t_alpha, hmm_alpha))
 
-		if verbose:
-			print "Writing Temporary Files"
-
+	def _do_search(self, hmm, targets, args):
 		#write the HMM to a temporary file
 		hmm_file = tempfile.NamedTemporaryFile()
 		target_file = tempfile.NamedTemporaryFile()
 		out_file = tempfile.NamedTemporaryFile()
 
-		hmmfile.write(self.hmm, hmm_file)
+		hmmfile.write(hmm, hmm_file)
 		hmm_file.flush()
 
-		SeqIO.write(ttargets, target_file, 'fasta')
+		SeqIO.write(targets, target_file, 'fasta')
 		target_file.flush()
-		del ttargets
+		del targets
 
-		args = self.getArgs(**kwargs)
-
-		if verbose:
-			print "Calling hmmsearch..."
-			print " ".join(['hmmsearch',] + args + ['--tformat', 'fasta', 
-			'--domtblout', out_file.name, hmm_file.name, target_file.name,])
 
 		p = Popen(['hmmsearch',] + args + ['--tformat', 'fasta', 
 			'--domtblout', out_file.name, hmm_file.name, target_file.name,]
@@ -259,21 +249,11 @@ class hmmsearch(hmmertool):
 		if p.returncode != 0:
 			raise RuntimeError('hmmsearch error: ' + out[1])
 
-		if verbose:
-			print "Reading in matches..."
-
-		self.matches = matchfile.load(out_file, self.hmm, self.targets)
-
-		if verbose:
-			print "Closing files..."
+		self.matches += matchfile.load(out_file, self.hmm, self.targets)
 
 		out_file.close()
 		hmm_file.close()
 		target_file.close()
-
-		if verbose:
-			print "Found {} matches in {} targets".format(len(self.matches), 
-					len(self.targets))
 
 	def mindist(self, dist=0, mode='hmm', verb=False):
 		"""
