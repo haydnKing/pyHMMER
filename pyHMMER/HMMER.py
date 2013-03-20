@@ -8,11 +8,13 @@ from Bio.Seq import Seq
 from Bio.Alphabet import DNAAlphabet, ProteinAlphabet, Alphabet, IUPAC
 
 import cStringIO as StringIO
-import hmmfile, tools, tempfile, subprocess, os, re
+import hmmfile, tools, tempfile, subprocess, os, re, resource, psutil
 from subprocess import Popen, PIPE, STDOUT
 
 import matchfile
 import sequtils	
+
+from sys import stdout
 
 class wrap(object):
 	"""A class which wraps anothe class, overriding specific values"""
@@ -39,6 +41,13 @@ def wrap_seqrecords(records, alpha = None):
 def wrap_hmms(hmms):
 	return [wrap(h, {'name': str(i), 'alpha': h.alph.upper(),}) 
 					for i,h in enumerate(hmms)]
+
+def set_limits():
+	"""Set process limits in the child thread"""
+	rsc = resource.RLIMIT_AS
+	soft, hard = resource.getrlimit(rsc)
+	#limit to the total physical memory
+	resource.setrlimit(rsc, (psutil.virtual_memory().total, hard))
 
 class hmmertool:
 	"""Class that each tool inherits from"""
@@ -221,13 +230,17 @@ class hmmsearch(hmmertool):
 			else:
 				if hmm_alpha == "AMINO" and t_alpha == "DNA":
 					#looks like we have to convert
-					tt =  tools.getSixFrameTranslation(t)
-					self._do_search(self.hmm, tt, args)
+					for tt in tools.getSixFrameTranslation(t):
+						self._do_search(self.hmm, [tt,], args)
 				else:
 					raise ValueError('Unknown Translation \'{}\' to \'{}\''
 							.format(t_alpha, hmm_alpha))
 
+		stdout.write(' '*40 + '\r')
+
 	def _do_search(self, hmm, targets, args):
+		stdout.write("\rSearching {:30s}\r".format(targets[0].description));
+		stdout.flush()
 		#write the HMM to a temporary file
 		hmm_file = tempfile.NamedTemporaryFile()
 		target_file = tempfile.NamedTemporaryFile()
@@ -243,11 +256,14 @@ class hmmsearch(hmmertool):
 
 		p = Popen(['hmmsearch',] + args + ['--tformat', 'fasta', 
 			'--domtblout', out_file.name, hmm_file.name, target_file.name,]
-			 , stdout=PIPE, stdin=PIPE, stderr=PIPE)
+			 , stdout=PIPE, stdin=PIPE, stderr=PIPE, preexec_fn=set_limits)
 		out = p.communicate()
 
 		if p.returncode != 0:
-			raise RuntimeError('hmmsearch error: ' + out[1])
+			if p.returncode == -6 and "alloc" in out[1].lower():
+				print "Suspected memmory allocation probelm"
+			raise RuntimeError('hmmsearch error ({}) : {}'.format(
+				p.returncode, out[1]))
 
 		self.matches += matchfile.load(out_file, self.hmm, self.targets)
 
