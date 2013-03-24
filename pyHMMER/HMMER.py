@@ -14,8 +14,6 @@ from subprocess import Popen, PIPE, STDOUT
 import matchfile
 import sequtils	
 
-from sys import stdout
-
 class wrap(object):
 	"""A class which wraps anothe class, overriding specific values"""
 	def __init__(self, wrapped, overrides):
@@ -135,9 +133,6 @@ class jackhmmer(hmmertool):
 		except IOError:
 			pass
 
-		if verbose:
-			print "Closing files..."
-
 		out_file.close()
 		seq_file.close()
 		seqdb_file.close()
@@ -225,22 +220,18 @@ class hmmsearch(hmmertool):
 			
 			#if target and hmms have same alphabet
 			if hmm_alpha == t_alpha:
-					self._do_search(self.hmm, [t,], args)
+				self.matches += self._do_search(self.hmm, t, args)
 			#else try translating
 			else:
 				if hmm_alpha == "AMINO" and t_alpha == "DNA":
 					#looks like we have to convert
 					for tt in tools.getSixFrameTranslation(t):
-						self._do_search(self.hmm, [tt,], args)
+						self.matches += self._do_search(self.hmm, tt, args)
 				else:
 					raise ValueError('Unknown Translation \'{}\' to \'{}\''
 							.format(t_alpha, hmm_alpha))
 
-		stdout.write(' '*40 + '\r')
-
-	def _do_search(self, hmm, targets, args):
-		stdout.write("\rSearching {:30s}\r".format(targets[0].description));
-		stdout.flush()
+	def _do_search(self, hmm, target, args):
 		#write the HMM to a temporary file
 		hmm_file = tempfile.NamedTemporaryFile()
 		target_file = tempfile.NamedTemporaryFile()
@@ -249,10 +240,8 @@ class hmmsearch(hmmertool):
 		hmmfile.write(hmm, hmm_file)
 		hmm_file.flush()
 
-		SeqIO.write(targets, target_file, 'fasta')
+		SeqIO.write([target,], target_file, 'fasta')
 		target_file.flush()
-		del targets
-
 
 		p = Popen(['hmmsearch',] + args + ['--tformat', 'fasta', 
 			'--domtblout', out_file.name, hmm_file.name, target_file.name,]
@@ -261,15 +250,26 @@ class hmmsearch(hmmertool):
 
 		if p.returncode != 0:
 			if p.returncode == -6 and "alloc" in out[1].lower():
-				print "Suspected memmory allocation probelm"
+				seq = target.seq
+				split = len(seq) / 2
+				target.seq = seq[0:split]
+				m_left = self._do_search(hmm, target, args)
+				target.seq = seq[split:]
+				m_right = self._do_search(hmm, target, args)
+				for m in m_right:
+					m.offset(split)
+				target.seq = seq
+				return m_left + m_right
+
 			raise RuntimeError('hmmsearch error ({}) : {}'.format(
 				p.returncode, out[1]))
-
-		self.matches += matchfile.load(out_file, self.hmm, self.targets)
+		else:
+			matches = matchfile.load(out_file, hmm, self.targets)
 
 		out_file.close()
 		hmm_file.close()
 		target_file.close()
+		return matches
 
 	def mindist(self, dist=0, mode='hmm', verb=False):
 		"""

@@ -44,6 +44,13 @@ class Match:
 	def getEnvPos(self):
 		return self._map_position((self.env_from, self.env_to))
 
+	def offset(self, o):
+		"""Offset the match by the given amount"""
+		self.ali_to += o
+		self.ali_from += o
+		self.env_from += o
+		self.env_to += o
+
 	def getFrameSpan(self, mode='hmm'):
 		"""get the raw coordinates of the match"""
 		mode = mode.lower()
