@@ -1,6 +1,6 @@
 import unittest, re, tempfile
 from pyHMMER import matchfile, hmmfile, HMMER
-from Bio import SeqIO
+from Bio import SeqIO, Alphabet
 
 
 hmm_seq = "SCEAGFGGESLKLQSGFHEIKGLEDAIDLFSDML"
@@ -48,9 +48,8 @@ class TestMatchRead(unittest.TestCase):
 
 	hmms = hmmfile.read('tests/data/valid.hmm')
 
-	targets = list()
-	for r in SeqIO.parse('tests/data/matchtarget.fasta', 'fasta'):
-		targets.append(r)
+	targets = list(SeqIO.parse('tests/data/matchtarget.fasta', 'fasta',
+		alphabet = Alphabet.generic_protein))
 
 	targets = HMMER.wrap_seqrecords(targets)
 	hmms  = HMMER.wrap_hmms(hmms)

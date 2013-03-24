@@ -1,6 +1,8 @@
 """Read and Write HMMER's match format"""
-import re, sequtils
+import re, sequtils, hmmfile
+from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
+from Bio import Alphabet
 
 class Match:
 	"""Represents an HMM match"""
@@ -302,12 +304,27 @@ def load(f, queries, targets):
 		#attempt to set target
 		name = l[0]
 		match.target = targets[int(name)].wrapped
-		match.translation['target'] = targets[int(name)].alpha
+		a = match.target.seq.alphabet
+		if isinstance(a, Alphabet.DNAAlphabet):
+			match.translation['target'] = "DNA"
+		elif isinstance(a, Alphabet.ProteinAlphabet):
+			match.translation['target'] = "AMINO"
+		else:
+			match.translation['target'] = "UNKNOWN"
 
 		#set the query
 		qname = l[3]
 		match.query = queries[int(qname)].wrapped
-		match.translation['query'] = queries[int(qname)].alpha
+		if isinstance(match.query, SeqRecord):
+			a = match.query.seq.alphabet
+			if isinstance(a, Alphabet.DNAAlphabet):
+				match.translation['query'] = 'DNA'
+			elif isinstance(a, Alphabet.ProteinAlphabet):
+				match.translation['query'] = 'AMINO'
+			else:
+				match.translation['query'] = 'UNKNOWN'
+		else:
+			match.translation['query'] = match.query.alpha
 
 		for i,fmt in enumerate(format_list[0:-1]):
 			v = l[i]

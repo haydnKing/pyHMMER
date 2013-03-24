@@ -32,9 +32,7 @@ class wrap(object):
 		return len(self.wrapped)
 
 def wrap_seqrecords(records, alpha = None):
-	return [wrap(r, {'id': str(i), 
-		'alpha': alpha or sequtils.seq_type(str(r.seq))}) 
-				for i,r in enumerate(records)]
+	return [wrap(r, {'id': str(i),}) for i,r in enumerate(records)]
 
 def wrap_hmms(hmms):
 	return [wrap(h, {'name': str(i), 'alpha': h.alph.upper(),}) 
@@ -227,6 +225,10 @@ class hmmsearch(hmmertool):
 
 
 	def _do_search(self, hmm, target, args):
+		#bail if there isn't any sequence to search
+		if not len(target):
+			return []
+
 		#write the HMM to a temporary file
 		hmm_file = tempfile.NamedTemporaryFile()
 		target_file = tempfile.NamedTemporaryFile()
