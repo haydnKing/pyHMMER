@@ -1,5 +1,5 @@
 from pyHMMER import hmmfile, matchfile, sequtils, HMMER
-from Bio import SeqIO
+from Bio import SeqIO, Alphabet
 import unittest, tempfile, re
 
 from matchfile import check_valid, hmm_seq, ali_seq
@@ -7,14 +7,17 @@ from matchfile import check_valid, hmm_seq, ali_seq
 class Testhmmsearch(unittest.TestCase):
 
 	def test_search(self):
-		h = HMMER.hmmsearch('tests/data/valid.hmm', 'tests/data/matchtarget.fasta')
+		t = SeqIO.parse('tests/data/matchtarget.fasta', 'fasta',
+				alphabet=Alphabet.generic_protein)
+		h = HMMER.hmmsearch('tests/data/valid.hmm', t)
 		self.assertEqual(len(h.matches), 17)
 		check_valid(self, h.matches)
 		s = str(h)
 
 	def test_translation_search(self):
-		h = HMMER.hmmsearch('tests/data/valid.hmm', 
-				'tests/data/reversedmatchtarget.fasta')
+		t = SeqIO.parse('tests/data/reversedmatchtarget.fasta', 'fasta',
+					alphabet=Alphabet.generic_dna)
+		h = HMMER.hmmsearch('tests/data/valid.hmm', t)
 		self.assertEqual(len(h.matches), 17)
 		s = sequtils.translate(str(h.matches[0].getSequence()))
 		self.assertEqual(s, hmm_seq)

@@ -5,7 +5,7 @@ from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.Seq import Seq
-from Bio.Alphabet import DNAAlphabet, ProteinAlphabet, Alphabet, IUPAC
+from Bio import Alphabet
 
 import cStringIO as StringIO
 import hmmfile, tools, tempfile, subprocess, os, re, resource, psutil
@@ -188,22 +188,15 @@ class hmmsearch(hmmertool):
 		#make sure targets is iterable
 		if not hasattr(targets, '__iter__') or isinstance(targets, SeqRecord):
 			targets = [targets,]
-		self.targets = list()
-		#load a fasta file if t is not a seqRecord
-		for t in targets:
+		self.targets = list(targets)
+		for t in self.targets:
 			if not isinstance(t, SeqRecord):
-				for req in SeqIO.parse(t, 'genbank'):
-					self.targets.append(req)
-				for req in SeqIO.parse(t, 'fasta'):
-					self.targets.append(req)
-			else:
-				self.targets.append(t)
+				raise ValueError("Search Targets must be SeqRecords")
 
 		#apply unique ids
 		self.targets = wrap_seqrecords(self.targets) 
 		self.hmm = wrap_hmms(self.hmm)
 
-		ttargets = []
 		hmm_alpha = self.hmm[0].alph.upper()
 		for h in self.hmm:
 			if h.alph.upper() != hmm_alpha:
@@ -216,20 +209,22 @@ class hmmsearch(hmmertool):
 
 		#Translate targets if necessary
 		for t in self.targets:
-			t_alpha = sequtils.seq_type(str(t.seq))
-			
-			#if target and hmms have same alphabet
-			if hmm_alpha == t_alpha:
-				self.matches += self._do_search(self.hmm, t, args)
-			#else try translating
-			else:
-				if hmm_alpha == "AMINO" and t_alpha == "DNA":
+			if hmm_alpha == 'DNA':
+				if isinstance(t.seq.alphabet, Alphabet.DNAAlphabet):
+					self.matches += self._do_search(self.hmm, t, args)
+				else:
+					raise ValueError("Cannot search DNA model against non-DNA target")
+			elif hmm_alpha == 'AMINO':
+				if isinstance(t.seq.alphabet, Alphabet.ProteinAlphabet):
+					self.matches += self._do_search(self.hmm, t, args)
+				elif isinstance(t.seq.alphabet, Alphabet.DNAAlphabet):
 					#looks like we have to convert
 					for tt in tools.getSixFrameTranslation(t):
 						self.matches += self._do_search(self.hmm, tt, args)
 				else:
-					raise ValueError('Unknown Translation \'{}\' to \'{}\''
-							.format(t_alpha, hmm_alpha))
+					raise ValueError("Cannot search Protein model against {} target"
+							.format(t.seq.alphabet))
+
 
 	def _do_search(self, hmm, target, args):
 		#write the HMM to a temporary file
