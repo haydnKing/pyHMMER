@@ -28,6 +28,20 @@ class wrap(object):
 			return self.overrides[item]
 		return getattr(self.wrapped, item)
 
+	def alphabet(self):
+		if isinstance(self.wrapped, SeqRecord):
+			a = self.wrapped.seq.alphabet
+			if isinstance(a, Alphabet.DNAAlphabet):
+				return 'DNA'
+			elif isinstance(a, Alphabet.ProteinAlphabet) or (
+					isinstance(a, Alphabet.HasStopCodon) and 
+					isinstance(a.alphabet, Alphabet.ProteinAlphabet)):
+				return 'AMINO'
+			else:
+				return 'UNKNOWN'
+		else:
+			return self.wrapped.alpha.upper()
+
 	def __len__(self):
 		return len(self.wrapped)
 
@@ -207,15 +221,16 @@ class hmmsearch(hmmertool):
 
 		#Translate targets if necessary
 		for t in self.targets:
+			t_alpha = t.alphabet()
 			if hmm_alpha == 'DNA':
-				if isinstance(t.seq.alphabet, Alphabet.DNAAlphabet):
+				if t_alpha == 'DNA':
 					self.matches += self._do_search(self.hmm, t, args)
 				else:
 					raise ValueError("Cannot search DNA model against non-DNA target")
 			elif hmm_alpha == 'AMINO':
-				if isinstance(t.seq.alphabet, Alphabet.ProteinAlphabet):
+				if t_alpha == 'AMINO':
 					self.matches += self._do_search(self.hmm, t, args)
-				elif isinstance(t.seq.alphabet, Alphabet.DNAAlphabet):
+				elif t_alpha == 'DNA':
 					#looks like we have to convert
 					for tt in tools.getSixFrameTranslation(t):
 						self.matches += self._do_search(self.hmm, tt, args)

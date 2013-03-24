@@ -304,13 +304,7 @@ def load(f, queries, targets):
 		#attempt to set target
 		name = l[0]
 		match.target = targets[int(name)].wrapped
-		a = match.target.seq.alphabet
-		if isinstance(a, Alphabet.DNAAlphabet):
-			match.translation['target'] = "DNA"
-		elif isinstance(a, Alphabet.ProteinAlphabet):
-			match.translation['target'] = "AMINO"
-		else:
-			match.translation['target'] = "UNKNOWN"
+		match.translation['target'] = targets[int(name)].alphabet()
 
 		#set the query
 		qname = l[3]
