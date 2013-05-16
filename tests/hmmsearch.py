@@ -12,16 +12,22 @@ class Testhmmsearch(unittest.TestCase):
 		h = HMMER.hmmsearch('tests/data/valid.hmm', t)
 		self.assertEqual(len(h.matches), 17)
 		check_valid(self, h.matches)
-		s = str(h)
 
 	def test_translation_search(self):
-		t = SeqIO.parse('tests/data/reversedmatchtarget.fasta', 'fasta',
+		t = SeqIO.parse('tests/data/dna_target.fasta', 'fasta',
 					alphabet=Alphabet.generic_dna)
 		h = HMMER.hmmsearch('tests/data/valid.hmm', t)
 		self.assertEqual(len(h.matches), 17)
-		s = sequtils.translate(str(h.matches[0].getSequence()))
-		self.assertEqual(s, hmm_seq)
-		s = str(h)
+		check_valid(self, h.matches)
+
+		#check that matches all have frame 1
+		for m in h.matches:
+			self.assertEqual(m.getFrame(), 1)
+
+		#test feature extraction
+		for m in h.matches:
+			f = m.asSeqFeature()
+			self.assertEqual(f.qualifiers['frame'], 1)
 
 class TestAnnotation(unittest.TestCase):
 
