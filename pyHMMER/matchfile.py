@@ -95,8 +95,10 @@ class Match:
 			strand = 1
 		elif self.frame < 0:
 			strand = -1
-		return SeqFeature(FeatureLocation(span[0]-offset, span[1]-offset,
-			strand=strand), type="{}".format(type or self.query.name))
+		return SeqFeature(
+				FeatureLocation(span[0]-offset, span[1]-offset, strand=strand), 
+				type = "{}".format(type or self.query.name),
+				qualifiers = {'frame':self.getFrame(),})
 	
 	def withinTarget(self):
 		"""return true if the hmm position is within the target sequence"""
