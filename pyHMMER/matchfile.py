@@ -27,7 +27,7 @@ class Match:
 		return "<Unknown>"
 
 	def getFrame(self):
-		if self.frame and self.frame in range(-3,3):
+		if self.frame and self.frame in [-3,-2,-1,1,2,3]:
 			return self.frame
 		return 0
 
