@@ -53,6 +53,13 @@ class Match:
 		self.env_from += o
 		self.env_to += o
 
+	def scale(self, s):
+		"""Scale the match by the given amount"""
+		self.ali_to = int(s * self.ali_to)
+		self.ali_from = int(s * self.ali_from)
+		self.env_from = int(s * self.env_from)
+		self.env_to = int(s * self.env_to)
+
 	def getFrameSpan(self, mode='hmm'):
 		"""get the raw coordinates of the match"""
 		mode = mode.lower()
@@ -279,7 +286,7 @@ def save(matches, f):
 		f.close()
 
 
-def load(f, queries, targets):
+def load(f, queries, targets, verbose=False):
 	"""Load the results of the search stored in f (filename or file object)
 		which was conducted by searching hmms against targets"""
 
@@ -339,6 +346,9 @@ def load(f, queries, targets):
 		m = re.search(r"frame:\s(?P<frame>[+-]?\d)", match.desc)
 		if m:
 			match.frame = int(m.group("frame"))
+
+		if verbose:
+			print "Add match: {}".format(match)
 
 		matches.append(match)
 

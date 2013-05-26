@@ -14,6 +14,15 @@ from subprocess import Popen, PIPE, STDOUT
 import matchfile
 import sequtils	
 
+def is_protein(seq):
+	a = seq.seq.alphabet
+	return (isinstance(a, Alphabet.ProteinAlphabet) or 
+						(isinstance(a, Alphabet.HasStopCodon) and 
+								isinstance(a.alphabet, Alphabet.ProteinAlphabet)))
+
+def is_dna(seq):
+	return isinstance(seq.seq.alphabet, Alphabet.DNAAlphabet)
+
 class wrap(object):
 	"""A class which wraps anothe class, overriding specific values"""
 	def __init__(self, wrapped, overrides):
@@ -30,12 +39,9 @@ class wrap(object):
 
 	def alphabet(self):
 		if isinstance(self.wrapped, SeqRecord):
-			a = self.wrapped.seq.alphabet
-			if isinstance(a, Alphabet.DNAAlphabet):
+			if is_dna(self.wrapped):
 				return 'DNA'
-			elif isinstance(a, Alphabet.ProteinAlphabet) or (
-					isinstance(a, Alphabet.HasStopCodon) and 
-					isinstance(a.alphabet, Alphabet.ProteinAlphabet)):
+			elif is_protein(self.wrapped):
 				return 'AMINO'
 			else:
 				return 'UNKNOWN'
@@ -103,25 +109,46 @@ class jackhmmer(hmmertool):
 
 			keyword arguments: other arguments to jackhmmer - see HMMER docs
 		"""
-		#turn everything into lists
-		if isinstance(seq, SeqRecord):
-			seq = [seq,]
+		#Can only have one query
+		if not isinstance(seq, SeqRecord):
+			raise ValueError("seq must be a SeqRecord, not \'{}\'".format(type(seq)))
+		if not is_protein(seq):
+			raise ValueError("seq be have a ProteinAlphabet, not \'{}\'".format(a))
+				
 		if isinstance(seqdb, SeqRecord):
 			seqdb = [seqdb,]
 
-		args = self.getArgs(**kwargs)
+		self.args = self.getArgs(**kwargs)
+		self.matches = []
+		self.hmms = []
 
 		#apply unique ids to the targets
-		self.seq = wrap_seqrecords(seq, alpha='AMINO')
-		self.seqdb=wrap_seqrecords(seqdb, alpha='AMINO')
+		self.seq = wrap_seqrecords([seq,])
+		self.seqdb=wrap_seqrecords(seqdb)
+
+		targets = []
+
+		for t in self.seqdb:
+			if is_protein(t):
+				targets.append(t)
+			elif is_dna(t):
+				targets += list(tools.getSixFrameTranslation(t))
+			else:
+				raise ValueError(
+					"Targets must have a DNAAlphabet or a ProteinAlphabet, not \'{}\'"
+						.format(t.seq.alphabet))
+
+		self._do_search(self.seq, targets, self.args)
+
+	def _do_search(self, seq, seqdb, args):
 
 		seq_file = tempfile.NamedTemporaryFile()
 		seqdb_file = tempfile.NamedTemporaryFile()
 		out_file = tempfile.NamedTemporaryFile()
 		hmm_file = tempfile.NamedTemporaryFile()
 
-		SeqIO.write(self.seq, seq_file, 'fasta')
-		SeqIO.write(self.seqdb, seqdb_file, 'fasta')
+		SeqIO.write(seq, seq_file, 'fasta')
+		SeqIO.write(seqdb, seqdb_file, 'fasta')
 		seq_file.flush()
 		seqdb_file.flush()
 
@@ -131,10 +158,9 @@ class jackhmmer(hmmertool):
 				stdout=PIPE, stdin=PIPE, stderr=PIPE)
 		out = p.communicate()
 
-		self.matches = matchfile.load(out_file, self.seq, self.seqdb)
+		self.matches += matchfile.load(out_file, seq, self.seqdb)
 
 		#load the hmms
-		self.hmms = []
 		try:
 			i = 1
 			while True:
