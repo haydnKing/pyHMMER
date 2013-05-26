@@ -170,8 +170,10 @@ class hmmsearch(hmmertool):
 	ARGS = ['E','T','domE','domT','incE','incT','incdomE','incdomT',
 			'F1','F2','F3','Z','domZ','seed','tformat','cpu',]
 	
+	
 	def __init__(self, hmm = None, targets = None, **kwargs):
 		"""Initialise - search if hmm and targets have been provided"""
+		self.matches = []
 		if hmm and targets:
 			self.search(hmm, targets, **kwargs)
 
