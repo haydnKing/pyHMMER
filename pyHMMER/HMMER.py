@@ -188,6 +188,12 @@ class jackhmmer(hmmertool):
 		for m in self.matches:
 			m.getTarget().features.append(m.asSeqFeature(mode=mode,type=type))
 
+	def getFeatures(mode='hmm', type=None):
+		r = []
+		for m in self.matches:
+			r.append(m.asSeqFeature(mode=mode, type=type))
+		return r
+
 
 class hmmsearch(hmmertool):
 	"""Search for an HMM in a database and collect the results"""
